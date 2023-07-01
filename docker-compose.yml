@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  pgdb:
+    image: postgres:15.2
+    environment:
+      POSTGRES_USER: market_app
+      POSTGRES_DB: market_db
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+    volumes:
+      - "./postgres-data/pgdb:/var/lib/postgresql"
+    ports:
+      - "5432:5432"
+

@@ -1,5 +1,8 @@
+use dotenv::dotenv;
+
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
     // Build our application with a single route.
     let app = axum::Router::new().route("/",
         axum::routing::get(|| async { "Hello, World!" }));

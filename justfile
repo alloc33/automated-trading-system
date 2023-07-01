@@ -1,3 +1,6 @@
+# vim: set ft=make
+# code: language=makefile
+
 default:
     just --list
 
@@ -15,6 +18,23 @@ check:
 ##################################################
 ################### DATABASE #####################
 ##################################################
+
+db-start:
+    docker-compose up -d pgdb
+
+# start with a clean database
+db-fresh: && migrate
+    docker-compose down
+    just db-start
+    sleep 2
+
+# run `cargo sqlx migrate` subcommand (`run` by default)
+migrate subcommand="run":
+    cargo sqlx migrate {{ subcommand }}  --source=./migrations
+
+# generate broker/sqlx-data.json for offline mode
+for-offline: db-start migrate
+    cargo sqlx prepare --merged
 
 # enter the PostgreSQL database shell
 db-shell user="market_app" db="market_db":
