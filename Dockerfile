@@ -34,6 +34,7 @@ FROM base-builder AS build-src
 COPY .rustfmt.toml .rustfmt.toml
 COPY Cargo.lock Cargo.lock
 COPY Cargo.toml Cargo.toml
+COPY market ./market
 
 FROM build-src AS test
 
