@@ -10,7 +10,7 @@ export DATABASE_URL := "postgres://market_app@localhost:5432/market_db"
 # run development server
 runserver:
     # ignore files that sqlx prepare touches during offline query data preparation
-    cargo watch -x "run -p market" # -w broker/src --why --ignore broker/src/lib.rs --ignore broker/src/main.rs
+    cargo watch -x "run -p market" -w market/src --why --ignore market/src/lib.rs --ignore market/src/main.rs
 
 check:
     cargo check
@@ -30,15 +30,26 @@ db-fresh: && migrate
 
 # run `cargo sqlx migrate` subcommand (`run` by default)
 migrate subcommand="run":
-    cargo sqlx migrate {{ subcommand }}  --source=./migrations
+    cargo sqlx migrate {{ subcommand }}  --source=./market/migrations
 
-# generate broker/sqlx-data.json for offline mode
+# generate market/sqlx-data.json for offline mode
 for-offline: db-start migrate
-    cargo sqlx prepare --merged
+    cd market && cargo sqlx prepare --merged -- --lib --tests
 
 # enter the PostgreSQL database shell
 db-shell user="market_app" db="market_db":
     docker-compose exec pgdb psql -d {{ db }} -U {{ user }}
+
+##################################################
+#################### DOCKER ######################
+##################################################
+
+# build broker and broker-db-manager images via Docker Desktop - option for MacOS.
+release-docker-desktop pghost="host.docker.internal":
+    docker build --target market --progress=plain \
+    --build-arg=PGHOST={{ pghost }} .
+    docker build --target dbmanager --progress=plain \
+    --build-arg=PGHOST={{ pghost }} .
 
 ##################################################
 ##################### TEST #######################

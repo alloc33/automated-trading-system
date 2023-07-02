@@ -1,18 +1,5 @@
-[package]
-name = "market"
-version = "0.1.0"
-edition = "2021"
+[workspace]
 
-[dependencies]
-argon2 = "0.5"
-axum = { version = "0.6" }
-axum-extra = "0.7"
-chrono = { version = "0.4", features = ["serde"] }
-dotenv = "0.15"
-jsonwebtoken = "8.3"
-serde_json = { version = "1", features = ["raw_value"] }
-sqlx = { version = "0.6.3", features = ["runtime-async-std-native-tls", "postgres", "chrono", "uuid", "offline"] }
-thiserror = "1.0"
-tokio = { version = "1.29", features = ["full"] }
-tracing = "0.1"
-uuid = "1"
+members = [
+    "market",
+]
