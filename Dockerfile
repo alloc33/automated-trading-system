@@ -1,17 +1,7 @@
 # syntax=docker/dockerfile:1.4
 
-FROM rust:latest AS base-builder
+FROM rust:1.70-slim-buster as base-builder
 
-RUN apt update && apt install -y --no-install-recommends \
-	gettext-base \
-	musl-tools \
-	musl-dev \
-	postgresql-client \
-	&& rm -rf /var/lib/apt/lists/*
-RUN update-ca-certificates
-RUN rustup toolchain install nightly --profile minimal --component rustfmt
-RUN rustup target add --toolchain nightly x86_64-unknown-linux-musl
-RUN rustup target add x86_64-unknown-linux-musl
 RUN rustup component add clippy
 
 # Create app user
@@ -23,7 +13,11 @@ ARG GID=1000
 RUN groupadd -g $GID $GROUP && useradd -u $UID -g $GROUP $USER
 
 RUN mkdir /build /app /app/bin /app/data  && \
-	chown user:user /build /app /app/bin /app/data
+    chown user:user /build /app /app/bin /app/data
+
+RUN apt-get update -y && \
+  apt-get install -y pkg-config make g++ libssl-dev && \
+  rustup target add x86_64-unknown-linux-gnu
 
 WORKDIR /build
 
@@ -46,11 +40,10 @@ ENV RUST_BACKTRACE=full
 ENV SQLX_OFFLINE=true
 ENV DATABASE_URL="postgres://market_app@${PGHOST}:${PGPORT}/market_db"
 
-RUN cargo test --target=x86_64-unknown-linux-musl --verbose --release -p market
+RUN cargo test --verbose --release -p market
 
 FROM build-src AS builder
-RUN cargo build --release --target x86_64-unknown-linux-musl --package market --locked \
-	--bin market && cp ./target/x86_64-unknown-linux-musl/release/market /app/bin/
+RUN cargo build --release && cp ./target/release/market /app/bin/
 
 FROM scratch AS market
 
@@ -69,3 +62,4 @@ COPY --from=base-builder /etc/group /etc/group
 
 # Copy our build
 COPY --from=builder /app/ ./
+

@@ -38,18 +38,7 @@ for-offline: db-start migrate
 
 # enter the PostgreSQL database shell
 db-shell user="market_app" db="market_db":
-    docker-compose exec pgdb psql -d {{ db }} -U {{ user }}
-
-##################################################
-#################### DOCKER ######################
-##################################################
-
-# build broker and broker-db-manager images via Docker Desktop - option for MacOS.
-release-docker-desktop pghost="host.docker.internal":
-    docker build --target market --progress=plain \
-    --build-arg=PGHOST={{ pghost }} .
-    docker build --target dbmanager --progress=plain \
-    --build-arg=PGHOST={{ pghost }} .
+    pgdb psql -d {{ db }} -U {{ user }}
 
 ##################################################
 ##################### TEST #######################

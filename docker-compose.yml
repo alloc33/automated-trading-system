@@ -6,13 +6,13 @@ services:
       target: market
     environment:
       BROKER_LOG_LEVEL: "normal"
-      BROKER_ADDRESS: "0.0.0.0"
-      BROKER_DATABASES.BROKER_DB.URL: "postgres://broker_app@pgdb:5432/broker_db"
-      BROKER_SALESFORCE.SYNC_ENABLED: "false"
+      MARKET_ADDRESS: "0.0.0.0"
+      MARKET_DATABASES.MARKET_DB.URL: "postgres://market_app@pgdb:5432/market_db"
     ports:
       - "8888:8000"
     depends_on:
       - pgdb
+
   pgdb:
     image: postgres:15.2
     environment:
