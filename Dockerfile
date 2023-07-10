@@ -16,8 +16,8 @@ RUN mkdir /build /app /app/bin /app/data  && \
     chown user:user /build /app /app/bin /app/data
 
 RUN apt-get update -y && \
-  apt-get install -y pkg-config make g++ libssl-dev && \
-  rustup target add x86_64-unknown-linux-gnu
+    apt-get install -y pkg-config make g++ libssl-dev && \
+    rustup target add x86_64-unknown-linux-gnu
 
 WORKDIR /build
 
@@ -43,9 +43,9 @@ ENV DATABASE_URL="postgres://market_app@${PGHOST}:${PGPORT}/market_db"
 RUN cargo test --verbose --release -p market
 
 FROM build-src AS builder
-RUN cargo build --release && cp ./target/release/market /app/bin/
+RUN cargo build --release --target x86_64-unknown-linux-gnu && cp ./target/x86_64-unknown-linux-gnu/release/market /app/bin/
 
-FROM scratch AS market
+FROM ubuntu:20.10 AS market
 
 WORKDIR /app
 
