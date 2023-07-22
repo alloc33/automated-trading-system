@@ -1,13 +1,11 @@
 version: "3.8"
 services:
-  market: &market
+  market: 
     build:
       context: .
       target: market
-    environment:
-      BROKER_LOG_LEVEL: "normal"
-      MARKET_ADDRESS: "0.0.0.0"
-      MARKET_DATABASES.MARKET_DB.URL: "postgres://market_app@pgdb:5432/market_db"
+    env_file:
+        - ./.env
     ports:
       - "8888:8000"
     depends_on:
@@ -15,12 +13,19 @@ services:
 
   pgdb:
     image: postgres:15.2
-    environment:
-      POSTGRES_USER: market_app
-      POSTGRES_DB: market_db
-      POSTGRES_HOST_AUTH_METHOD: "trust"
+    env_file:
+        - ./.env
     volumes:
       - "./postgres-data/pgdb:/var/lib/postgresql"
     ports:
       - "5432:5432"
 
+  pgAdmin:
+    image: dpage/pgadmin4
+    container_name: pgAdmin
+    env_file:
+      - ./.env
+    ports:
+      - "5050:80"
+volumes:
+  progresDB:

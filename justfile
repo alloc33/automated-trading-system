@@ -5,7 +5,7 @@ default:
     just --list
 
 export RUST_LOG := env_var_or_default("RUST_LOG", "debug,sqlx=error")
-export DATABASE_URL := "postgres://market_app@localhost:5432/market_db"
+export DATABASE_URL := "postgres://market_app:market_pass_2023@localhost:5432/market_db"
 
 # run development server
 runserver:
@@ -20,7 +20,7 @@ check:
 ##################################################
 
 db-start:
-    docker-compose up -d pgdb
+    docker-compose up -d pgdb pgAdmin
 
 # start with a clean database
 db-fresh: && migrate
