@@ -12,11 +12,11 @@ services:
       - pgdb
 
   pgdb:
-    image: postgres:15.2
+    image: postgres:latest
     env_file:
         - ./.env
     volumes:
-      - "./postgres-data/pgdb:/var/lib/postgresql"
+      - progresDB:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 

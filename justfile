@@ -44,9 +44,9 @@ db-shell user="market_app" db="market_db":
 ################### DOCKER #######################
 ##################################################
 
-deploy broker_image="market-linux" host="nshv": 
-    docker buildx build --platform linux/amd64 . -t {{ broker_image }}
-    docker save {{ broker_image }} | ssh {{ host }} 'docker load && cd app && docker-compose up -d'
+deploy market_image="market-linux" host="nshv": 
+    docker buildx build --platform linux/amd64 . -t {{ market_image }}
+    docker save {{ market_image }} | ssh {{ host }} 'docker load && cd app && docker-compose up -d'
 
 ##################################################
 ##################### TEST #######################
