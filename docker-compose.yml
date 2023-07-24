@@ -4,8 +4,6 @@ services:
     build:
       context: .
       target: market
-    env_file:
-        - ./.env
     ports:
       - "8888:8000"
     depends_on:
@@ -13,8 +11,8 @@ services:
 
   pgdb:
     image: postgres:latest
-    env_file:
-        - ./.env
+    environment:
+      ./market/.env
     volumes:
       - progresDB:/var/lib/postgresql  # Use the named volume here
     ports:
@@ -23,10 +21,10 @@ services:
   pgAdmin:
     image: dpage/pgadmin4
     container_name: pgAdmin
-    env_file:
-      - ./.env
+    environment:
+      ./market/.env
     ports:
-      - "5050:80"
+      - "5050:8"
 
 volumes:
   progresDB:
