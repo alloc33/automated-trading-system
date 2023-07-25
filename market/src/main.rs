@@ -1,38 +1,26 @@
-use std::sync::Arc;
+use std::net::{Ipv4Addr, SocketAddr};
 
-use axum::{response::IntoResponse, routing::get, Json, Router};
-use config::Config;
-use dotenv::dotenv;
-
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use market::{build_routes, build_state, config::AppConfig};
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .compact()
+        .init();
 
-    let config = Config::build();
+    let config = AppConfig::build();
+    let state = build_state(config).await.unwrap_or_else(|err| {
+        tracing::error!(error=%err, "Cannot connect to database");
+        std::process::exit(1);
+    });
+    let app = build_routes(state.into());
 
-    let app = Router::new()
-        .route("/api/healthchecker", get(health_checker_handler))
-        .with_state(Arc::new(AppState {
-            db: pool.clone(),
-            env: config.clone(),
-        }));
-
-    println!("🚀 Server started successfully");
-    axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
+    let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 8000));
+    axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
-}
 
-pub async fn health_checker_handler() -> impl IntoResponse {
-    const MESSAGE: &str = "JWT Authentication in Rust using Axum, Postgres, and SQLX";
-
-    let json_response = serde_json::json!({
-        "status": "success",
-        "message": MESSAGE
-    });
-
-    Json(json_response)
+    tracing::info!("🚀 Server started successfully");
 }

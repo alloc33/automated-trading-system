@@ -5,7 +5,7 @@ default:
     just --list
 
 export RUST_LOG := env_var_or_default("RUST_LOG", "debug,sqlx=error")
-export DATABASE_URL := "postgres://market_app:C4aMnSTFp9T9bwqDPqV8uw==@localhost:5432/market_db"
+# export DATABASE_URL := "postgres://market_app:C4aMnSTFp9T9bwqDPqV8uw==@localhost:5432/market_db"
 
 # run development server
 runserver:
