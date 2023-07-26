@@ -15,12 +15,9 @@ async fn main() {
         std::process::exit(1);
     });
     let app = build_routes(state.into());
-
     let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 8000));
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
-
-    tracing::info!("🚀 Server started successfully");
 }

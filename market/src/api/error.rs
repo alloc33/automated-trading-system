@@ -1,6 +1,9 @@
 use std::{error::Error, fmt::Display};
 
-use axum::{http::StatusCode, response::Json};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Json},
+};
 use serde::{Serialize, Serializer};
 use serde_json::error::Category;
 use thiserror::Error as ThisError;
@@ -9,15 +12,6 @@ use tracing::error;
 pub const INTERNAL_SERVER_ERROR: &str = "Internal server error occurred...";
 pub const PAYLOAD_TOO_LARGE: &str = "Request payload too large...";
 pub const DATABASE_UNAVAILABLE: &str = "Database is unavailable...";
-
-async fn error_handler(error: ApiError) -> Json<ErrorResponse> {
-    let error_response = ErrorResponse {
-        code: error.http_status().as_u16(),
-        error: error.to_string(),
-    };
-
-    Json(error_response)
-}
 
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
@@ -130,6 +124,58 @@ pub enum ApiError {
     ServiceUnavailable(#[from] ServiceUnavailable),
 }
 
+impl IntoResponse for ApiError {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            Self::BadRequest(msg) => {
+                let error = ErrorResponse {
+                    code: StatusCode::BAD_REQUEST.as_u16(),
+                    error: msg,
+                };
+                Json(error).into_response()
+            }
+            Self::NotFound(msg) => {
+                let error = ErrorResponse {
+                    code: StatusCode::NOT_FOUND.as_u16(),
+                    error: msg,
+                };
+                Json(error).into_response()
+            }
+            Self::IOError(msg) => {
+                let error = ErrorResponse {
+                    code: StatusCode::BAD_REQUEST.as_u16(),
+                    error: msg,
+                };
+                Json(error).into_response()
+            }
+            Self::JsonParseError(msg) => {
+                let error = ErrorResponse {
+                    code: StatusCode::BAD_REQUEST.as_u16(),
+                    error: msg,
+                };
+                Json(error).into_response()
+            }
+            Self::PayloadTooLarge(err) => err.into_response(),
+            Self::InternalServerError(err) => err.into_response(),
+            Self::ServiceUnavailable(err) => err.into_response(),
+            Self::ConstraintError(err) => {
+                let error = ErrorResponse {
+                    code: StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
+                    error: err.to_string(),
+                };
+                Json(error).into_response()
+            }
+            Self::Unauthorized(msg) => {
+                let error = ErrorResponse {
+                    code: StatusCode::UNAUTHORIZED.as_u16(),
+                    error: msg,
+                };
+                Json(error).into_response()
+            }
+        }
+    }
+}
+
 // Convenience methods and constructors of particular types of error
 impl ApiError {
     #[must_use]
@@ -152,25 +198,6 @@ impl ApiError {
     {
         error!("{err}");
         Self::InternalServerError(InternalServerError)
-    }
-}
-
-
-
-impl From<axum::Error> for ApiError {
-    fn from(err: axum::Error) -> Self {
-        match err.source() {
-            Some(inner_error) => {
-                // Check if the inner error is ApiError, in which case, return it directly
-                if let Some(api_error) = inner_error.downcast_ref::<ApiError>() {
-                    return *api_error;
-                }
-            }
-            None => {} // No inner error, continue
-        }
-
-        // Default case: Convert to InternalServerError
-        ApiError::InternalServerError(InternalServerError)
     }
 }
 
@@ -250,6 +277,16 @@ impl From<serde_json::Error> for ApiError {
 #[derive(Copy, Clone, Debug)]
 pub struct PayloadTooLarge;
 
+impl IntoResponse for PayloadTooLarge {
+    fn into_response(self) -> axum::response::Response {
+        let error = ErrorResponse {
+            code: 413,
+            error: PAYLOAD_TOO_LARGE.to_string(),
+        };
+        Json(error).into_response()
+    }
+}
+
 impl Error for PayloadTooLarge {}
 
 impl Display for PayloadTooLarge {
@@ -272,6 +309,16 @@ impl Serialize for PayloadTooLarge {
 /// HTTP status code 500
 #[derive(Copy, Clone, Debug)]
 pub struct InternalServerError;
+
+impl IntoResponse for InternalServerError {
+    fn into_response(self) -> axum::response::Response {
+        let error = ErrorResponse {
+            code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            error: INTERNAL_SERVER_ERROR.to_string(),
+        };
+        Json(error).into_response()
+    }
+}
 
 impl Error for InternalServerError {}
 
@@ -299,6 +346,14 @@ pub enum ServiceUnavailable {
     Database(DatabaseUnavailable),
 }
 
+impl IntoResponse for ServiceUnavailable {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            Self::Database(database_unavailable) => database_unavailable.into_response(),
+        }
+    }
+}
+
 impl ServiceUnavailable {
     #[must_use]
     pub fn database() -> Self {
@@ -312,6 +367,16 @@ impl ServiceUnavailable {
 /// Returned when database is unavailable due network/TLS related issues.
 #[derive(Copy, Clone, Debug)]
 pub struct DatabaseUnavailable;
+
+impl IntoResponse for DatabaseUnavailable {
+    fn into_response(self) -> axum::response::Response {
+        let error = ErrorResponse {
+            code: StatusCode::SERVICE_UNAVAILABLE.as_u16(),
+            error: DATABASE_UNAVAILABLE.to_string(),
+        };
+        Json(error).into_response()
+    }
+}
 
 impl Error for DatabaseUnavailable {}
 

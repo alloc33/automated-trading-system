@@ -26,4 +26,3 @@ pub async fn auth<B>(
         "API key isn't correct or not found".to_string(),
     ))
 }
-

@@ -1,20 +1,22 @@
+pub mod api;
 pub mod auth;
 pub mod config;
-pub mod error;
-pub mod handler;
 pub mod model;
+
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
+use api::{
+    error,
+    trading_alert::{get_trading_alerts, process_trading_alert},
+};
+use auth::auth;
 use axum::{
-    body,
-    body::Bytes,
-    extract::MatchedPath,
-    http::{HeaderMap, Request, StatusCode},
-    middleware,
-    middleware::{from_fn, from_fn_with_state},
-    response::{Html, Response},
+    body::{Body, Bytes},
+    error_handling::HandleErrorLayer,
+    http::{request::Request, response::Response, Method, StatusCode, Uri},
+    middleware::{from_fn_with_state, Next},
     routing::{get, post},
-    Extension, Router,
+    BoxError, Extension, Router,
 };
 use config::AppConfig;
 use sqlx::{postgres::PgConnectOptions, Error as SqlxError, PgPool, Pool, Postgres};
@@ -26,25 +28,12 @@ use tower_http::{
 };
 use tracing::{info_span, Level, Span};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-// use std::{sync::Arc, time::Duration};
-// use axum::{
-//     middleware,
-//     routing::{get, post},
-//     Router,
-// };
-// use sqlx::{Pool, Postgres};
-// use config::Config;
+// use load_shed
 
 pub struct App {
     db: PgPool,
     config: AppConfig,
 }
-
-use crate::{
-    auth::auth,
-    handler::{another_handler, check_health},
-};
 
 pub async fn build_state(config: AppConfig) -> Result<App, SqlxError> {
     let opts = config.database_url.parse::<PgConnectOptions>()?;
@@ -63,13 +52,31 @@ pub async fn build_state(config: AppConfig) -> Result<App, SqlxError> {
 
 pub fn build_routes(app_state: Arc<App>) -> Router {
     Router::new()
-        .route("/", get(check_health))
-        .route("/another", get(another_handler))
-        .layer(from_fn_with_state(app_state.clone(), auth))
-        .layer(Extension(app_state))
+        .route("/alert", post(process_trading_alert))
+        .route("/alert", get(get_trading_alerts))
         .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-                .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
+            ServiceBuilder::new()
+                .layer(
+                    TraceLayer::new_for_http()
+                        .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+                        .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
+                )
+                .layer(from_fn_with_state(app_state.clone(), auth))
+                .layer(HandleErrorLayer::new(handle_timeout_error))
+                .timeout(Duration::from_secs(30))
         )
+        .with_state(app_state)
+}
+
+async fn handle_timeout_error(
+    // `Method` and `Uri` are extractors so they can be used here
+    method: Method,
+    uri: Uri,
+    // the last argument must be the error itself
+    err: BoxError,
+) -> (StatusCode, String) {
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        format!("`{} {}` failed with {}", method, uri, err),
+    )
 }
