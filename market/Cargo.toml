@@ -22,5 +22,6 @@ tower-http = { version = "0.4.0", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"]}
 uuid = { version = "1.3.0", features = ["serde", "v4"] }
+uuid7 = { version = "0.6", features = ["uuid", "serde"] }
 hyper = "0.14"
 tower-layer = "0.3.2"
