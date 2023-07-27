@@ -1,44 +1,51 @@
 use std::sync::Arc;
 
-use axum::{extract::State, Json};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use sqlx::{Pool, Postgres};
 use tracing::info;
+use uuid::uuid;
 
-use super::error::ApiError;
+use super::{error::ApiError, Response};
 use crate::App;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Deserialize)]
+pub struct NewTradingAlert {
+    pub ticker: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct TradingAlert {
-    pub date_time: DateTime<Utc>,
+    pub ticker: String,
 }
 
 pub async fn process_trading_alert(
     State(app): State<Arc<App>>,
-    Json(body): Json<TradingAlert>,
-) -> Result<(), ApiError> {
-    info!("Trading alert received: {body:#?}");
+    Json(body): Json<NewTradingAlert>,
+) -> Response<TradingAlert> {
+    let mock_alrt = TradingAlert {
+        ticker: body.ticker,
+    };
 
-    info!("Processing trading alert...");
-
-    Ok(())
+    Ok((StatusCode::CREATED, Json(mock_alrt)))
 }
 
-use serde::Serialize;
+// pub async fn get_trading_alerts(State(app): State<Arc<App>>) -> Result<Response, ApiError> {
+//     // Retrieve the trading alerts here...
 
-#[derive(Debug, Serialize)]
-pub struct TestErr {
-    pub test_1: String,
-    pub test_2: String,
-}
+//     // For the purpose of this example, let's assume we retrieved some trading alerts as a list
+// of     // strings. You can replace the following line with your actual logic to retrieve the
+//     // alerts.
+//     let alerts: Vec<String> = vec!["Alert 1".to_string(), "Alert 2".to_string()];
 
-pub async fn get_trading_alerts(State(app): State<Arc<App>>) -> Result<Json<String>, ApiError> {
-    let is_alert_nice = false;
+//     // Create a mock response body containing the trading alerts.
+//     let response_body = ApiResponseBody {
+//         message: "Trading alerts retrieved.".to_string(),
+//         body: None,
+//     };
 
-    // if !is_alert_nice {
-    //     return Err(ApiError::BadRequest("It's bad".to_string()))
-    // }
-
-    Err(ApiError::BadRequest("It's bad".to_string()))
-    // Ok(Json("nice alert!".to_string()))
-}
+//     // Return the ApiResponse with the mock response body and a status code of OK (200).
+//     Ok((StatusCode::OK, Json(response_body)))
+// }

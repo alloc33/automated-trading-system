@@ -12,7 +12,7 @@ services:
   pgdb:
     image: postgres:latest
     env_file:
-      ./market/.env
+      .env
     volumes:
       - progresDB:/var/lib/postgresql  # Use the named volume here
     ports:
@@ -22,7 +22,7 @@ services:
     image: dpage/pgadmin4
     container_name: pgAdmin
     env_file:
-      ./market/.env
+      .env
     ports:
       - "5050:8"
 

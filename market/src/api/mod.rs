@@ -1,7 +1,10 @@
 pub mod error;
+pub mod pagination;
 pub mod trading_alert;
 
-use axum::Json;
-use error::ApiError;
+use axum::{http::StatusCode, Json};
 
-pub(crate) type Response<T> = Result<Json<T>, ApiError>;
+use self::error::ApiError;
+use serde::Serialize;
+
+pub type Response<T> = Result<(StatusCode, Json<T>), ApiError>;
