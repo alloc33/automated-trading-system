@@ -1,10 +1,10 @@
-use std::{error::Error, fmt::Display};
+use std::fmt::Display;
 
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Json, Response},
 };
-use serde::{Serialize, Serializer};
+use serde::Serialize;
 use serde_json::error::Category;
 use thiserror::Error as ThisError;
 use tracing::error;

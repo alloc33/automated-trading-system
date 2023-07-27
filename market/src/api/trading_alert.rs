@@ -13,8 +13,6 @@ pub struct TradingAlert {
     pub date_time: DateTime<Utc>,
 }
 
-use axum::http::StatusCode;
-
 pub async fn process_trading_alert(
     State(app): State<Arc<App>>,
     Json(body): Json<TradingAlert>,
@@ -35,7 +33,6 @@ pub struct TestErr {
 }
 
 pub async fn get_trading_alerts(State(app): State<Arc<App>>) -> Result<Json<String>, ApiError> {
-    info!("Getting trading alerts...");
     let is_alert_nice = false;
 
     // if !is_alert_nice {

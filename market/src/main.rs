@@ -1,19 +1,12 @@
 use std::net::{Ipv4Addr, SocketAddr};
 
 use market::{build_routes, build_state, config::AppConfig};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "market=trace".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
 
+    tracing_subscriber::fmt::init();
     let config = AppConfig::build();
     let state = build_state(config).await.unwrap_or_else(|err| {
         tracing::error!(error=%err, "Cannot connect to database");
