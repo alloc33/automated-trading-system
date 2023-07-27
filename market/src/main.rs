@@ -1,12 +1,17 @@
 use std::net::{Ipv4Addr, SocketAddr};
 
 use market::{build_routes, build_state, config::AppConfig};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .compact()
+    dotenv::dotenv().ok();
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "market=trace".into()),
+        )
+        .with(tracing_subscriber::fmt::layer())
         .init();
 
     let config = AppConfig::build();

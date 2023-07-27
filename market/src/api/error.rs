@@ -2,7 +2,7 @@ use std::{error::Error, fmt::Display};
 
 use axum::{
     http::StatusCode,
-    response::{IntoResponse, Json},
+    response::{IntoResponse, Json, Response},
 };
 use serde::{Serialize, Serializer};
 use serde_json::error::Category;
@@ -21,20 +21,6 @@ pub struct ErrorResponse {
 
 #[derive(Clone, Debug, Serialize, ThisError)]
 pub enum ConstraintError {
-    // UniqueUserEmail,
-    // UniqueFeatureUuid,
-    // UniqueFeatureInPlanAsExtra,
-    // UniqueFeatureDependency,
-    // UniquePriceForCurrency,
-    // UniqueCountryRegion,
-    // UserDoesNotExist,
-    // OrganizationDoesNotExist,
-    // UserAlreadyExistsInOrganization,
-    // ParentOrganizationDoesNotExist,
-    // PlanDoesNotExist,
-    // FeatureDoesNotExist,
-    // OpportunityDoesNotExist,
-    // NotNullPlanOrFeature,
     Unknown(String),
     Null,
     // Other(String),
@@ -43,21 +29,6 @@ pub enum ConstraintError {
 impl Display for ConstraintError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let msg = match self {
-            // Self::Other(msg) => msg,
-            // Self::UniqueUserEmail => "Email already in use",
-            // Self::UniqueFeatureUuid => "Feature with this UUID already exists",
-            // Self::UniqueFeatureInPlanAsExtra => "Feature already exists in plan as extra",
-            // Self::UniqueFeatureDependency => "Feature dependency already exists",
-            // Self::UniquePriceForCurrency => "Price for currency already exists",
-            // Self::UniqueCountryRegion => "Country region already exists",
-            // Self::UserDoesNotExist => "User does not exist",
-            // Self::OrganizationDoesNotExist => "Organization does not exist",
-            // Self::UserAlreadyExistsInOrganization => "User already exists",
-            // Self::ParentOrganizationDoesNotExist => "Parent organization does not exist",
-            // Self::PlanDoesNotExist => "Plan does not exist",
-            // Self::FeatureDoesNotExist => "Feature does not exist",
-            // Self::OpportunityDoesNotExist => "Opportunity does not exist",
-            // Self::NotNullPlanOrFeature => "Plan or feature cannot be null on price",
             Self::Unknown(constraint) => constraint,
             Self::Null => "Non-null contraint",
         };
@@ -90,8 +61,8 @@ pub enum ApiError {
     /// Payload too large error.
     ///
     /// HTTP status code 413
-    #[error(transparent)]
-    PayloadTooLarge(#[from] PayloadTooLarge),
+    #[error("Request payload too large...")]
+    PayloadTooLarge,
 
     /// Unauthorized error.
     ///
@@ -114,65 +85,51 @@ pub enum ApiError {
     /// Unexpected internal server error.
     ///
     /// HTTP status code 500
-    #[error(transparent)]
-    InternalServerError(#[from] InternalServerError),
+    #[error("Internal server error occurred...")]
+    InternalServerError,
 
     /// Service unavailable error.
     ///
     /// HTTP status code 503
-    #[error(transparent)]
-    ServiceUnavailable(#[from] ServiceUnavailable),
+    #[error("Database is unavailable...")]
+    ServiceUnavailable,
 }
 
+// impl From<ApiError> for (StatusCode, Json<serde_json::Value>) {
+//     fn from(error: ApiError) -> Self {
+//         let body = Json(serde_json::json!({
+//             "error": error.to_string(),
+//         }));
+
+//         (error.http_status(), body)
+//     }
+// }
+
 impl IntoResponse for ApiError {
-    fn into_response(self) -> axum::response::Response {
-        match self {
-            Self::BadRequest(msg) => {
-                let error = ErrorResponse {
-                    code: StatusCode::BAD_REQUEST.as_u16(),
-                    error: msg,
-                };
-                Json(error).into_response()
-            }
-            Self::NotFound(msg) => {
-                let error = ErrorResponse {
-                    code: StatusCode::NOT_FOUND.as_u16(),
-                    error: msg,
-                };
-                Json(error).into_response()
-            }
-            Self::IOError(msg) => {
-                let error = ErrorResponse {
-                    code: StatusCode::BAD_REQUEST.as_u16(),
-                    error: msg,
-                };
-                Json(error).into_response()
-            }
-            Self::JsonParseError(msg) => {
-                let error = ErrorResponse {
-                    code: StatusCode::BAD_REQUEST.as_u16(),
-                    error: msg,
-                };
-                Json(error).into_response()
-            }
-            Self::PayloadTooLarge(err) => err.into_response(),
-            Self::InternalServerError(err) => err.into_response(),
-            Self::ServiceUnavailable(err) => err.into_response(),
-            Self::ConstraintError(err) => {
-                let error = ErrorResponse {
-                    code: StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
-                    error: err.to_string(),
-                };
-                Json(error).into_response()
-            }
-            Self::Unauthorized(msg) => {
-                let error = ErrorResponse {
-                    code: StatusCode::UNAUTHORIZED.as_u16(),
-                    error: msg,
-                };
-                Json(error).into_response()
-            }
-        }
+    fn into_response(self) -> Response {
+        let (status, error_message) = match self {
+            Self::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
+            Self::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
+            Self::IOError(msg) => (StatusCode::BAD_REQUEST, msg),
+            Self::JsonParseError(msg) => (StatusCode::BAD_REQUEST, msg),
+            Self::PayloadTooLarge => (StatusCode::PAYLOAD_TOO_LARGE, PAYLOAD_TOO_LARGE.to_owned()),
+            Self::InternalServerError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                INTERNAL_SERVER_ERROR.to_owned(),
+            ),
+            Self::ServiceUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                DATABASE_UNAVAILABLE.to_owned(),
+            ),
+            Self::ConstraintError(err) => (StatusCode::UNPROCESSABLE_ENTITY, err.to_string()),
+            Self::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
+        };
+
+        let body = Json(serde_json::json!({
+            "error": error_message,
+        }));
+
+        (status, body).into_response()
     }
 }
 
@@ -186,18 +143,19 @@ impl ApiError {
             | Self::BadRequest(_)
             | Self::NotFound(_) => StatusCode::BAD_REQUEST,
             Self::ConstraintError(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            Self::PayloadTooLarge(_) => StatusCode::PAYLOAD_TOO_LARGE,
-            Self::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            Self::ServiceUnavailable(_) => StatusCode::SERVICE_UNAVAILABLE,
+            Self::PayloadTooLarge => StatusCode::PAYLOAD_TOO_LARGE,
+            Self::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::ServiceUnavailable => StatusCode::SERVICE_UNAVAILABLE,
             Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
         }
     }
+
     pub fn internal_error<E>(err: E) -> Self
     where
         E: Display,
     {
         error!("{err}");
-        Self::InternalServerError(InternalServerError)
+        Self::InternalServerError
     }
 }
 
@@ -209,32 +167,6 @@ impl TryFrom<sqlx::Error> for ConstraintError {
             sqlx::Error::Database(database_err) => {
                 let constraint = database_err.constraint();
                 Ok(match constraint {
-                    // Some("unique_organization_user") => {
-                    //     ConstraintError::UserAlreadyExistsInOrganization
-                    // }
-                    // Some("unique_feature_uuid") => ConstraintError::UniqueFeatureUuid,
-                    // Some("users_unique_email") => ConstraintError::UniqueUserEmail,
-                    // Some("unique_feature_dependency") =>
-                    // ConstraintError::UniqueFeatureDependency,
-                    // Some("unique_price_for_currency") => ConstraintError::UniquePriceForCurrency,
-                    // Some("unique_country_region") => ConstraintError::UniqueCountryRegion,
-                    // Some("fk_link_user" | "fk_order_user") => ConstraintError::UserDoesNotExist,
-                    // Some("fk_link_organization" | "fk_order_organization" | "fk_contract_org") =>
-                    // {     ConstraintError::OrganizationDoesNotExist
-                    // }
-                    // Some("fk_parent_org") => ConstraintError::ParentOrganizationDoesNotExist,
-                    // Some("fk_feature_plan" | "fk_price_plan" | "fk_order_plan") => {
-                    //     ConstraintError::PlanDoesNotExist
-                    // }
-                    // Some(
-                    //     "fk_plan_feature"
-                    //     | "fk_dependency_feature"
-                    //     | "fk_feature_dependency"
-                    //     | "fk_price_feature",
-                    // ) => ConstraintError::FeatureDoesNotExist,
-                    // Some("fk_opportunity_org") => ConstraintError::OrganizationDoesNotExist,
-                    // Some("fk_quote_opportunity") => ConstraintError::OpportunityDoesNotExist,
-                    // Some("not_null_plan_or_feature") => ConstraintError::NotNullPlanOrFeature,
                     Some(unknown) => ConstraintError::Unknown(unknown.to_owned()),
                     None => ConstraintError::Null,
                 })
@@ -251,12 +183,12 @@ impl From<sqlx::Error> for ApiError {
             sqlx::Error::Io(_)
             | sqlx::Error::Tls(_)
             | sqlx::Error::PoolTimedOut
-            | sqlx::Error::PoolClosed => Self::ServiceUnavailable(ServiceUnavailable::database()),
+            | sqlx::Error::PoolClosed => Self::ServiceUnavailable,
             err @ sqlx::Error::Database(_) => match err.try_into() {
                 Ok(contraint_error) => Self::ConstraintError(contraint_error),
-                Err(_) => Self::ServiceUnavailable(ServiceUnavailable::database()),
+                Err(_) => Self::ServiceUnavailable,
             },
-            _ => Self::InternalServerError(InternalServerError),
+            _ => Self::InternalServerError,
         }
     }
 }
@@ -268,129 +200,5 @@ impl From<serde_json::Error> for ApiError {
         } else {
             ApiError::JsonParseError(err.to_string())
         }
-    }
-}
-
-/// Request body is too large.
-///
-/// HTTP status code 413
-#[derive(Copy, Clone, Debug)]
-pub struct PayloadTooLarge;
-
-impl IntoResponse for PayloadTooLarge {
-    fn into_response(self) -> axum::response::Response {
-        let error = ErrorResponse {
-            code: 413,
-            error: PAYLOAD_TOO_LARGE.to_string(),
-        };
-        Json(error).into_response()
-    }
-}
-
-impl Error for PayloadTooLarge {}
-
-impl Display for PayloadTooLarge {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", PAYLOAD_TOO_LARGE)
-    }
-}
-
-impl Serialize for PayloadTooLarge {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(PAYLOAD_TOO_LARGE)
-    }
-}
-
-/// Unexpected internal server error.
-///
-/// HTTP status code 500
-#[derive(Copy, Clone, Debug)]
-pub struct InternalServerError;
-
-impl IntoResponse for InternalServerError {
-    fn into_response(self) -> axum::response::Response {
-        let error = ErrorResponse {
-            code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-            error: INTERNAL_SERVER_ERROR.to_string(),
-        };
-        Json(error).into_response()
-    }
-}
-
-impl Error for InternalServerError {}
-
-impl Display for InternalServerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", INTERNAL_SERVER_ERROR)
-    }
-}
-
-impl Serialize for InternalServerError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(INTERNAL_SERVER_ERROR)
-    }
-}
-
-/// Service unavailable error.
-///
-/// HTTP status code 503
-#[derive(Copy, Clone, Debug, Serialize, ThisError)]
-pub enum ServiceUnavailable {
-    #[error(transparent)]
-    Database(DatabaseUnavailable),
-}
-
-impl IntoResponse for ServiceUnavailable {
-    fn into_response(self) -> axum::response::Response {
-        match self {
-            Self::Database(database_unavailable) => database_unavailable.into_response(),
-        }
-    }
-}
-
-impl ServiceUnavailable {
-    #[must_use]
-    pub fn database() -> Self {
-        Self::Database(DatabaseUnavailable)
-    }
-}
-
-/// Variant for [`ServiceUnavailable`] error
-/// which represents that the database cannot be reached.
-///
-/// Returned when database is unavailable due network/TLS related issues.
-#[derive(Copy, Clone, Debug)]
-pub struct DatabaseUnavailable;
-
-impl IntoResponse for DatabaseUnavailable {
-    fn into_response(self) -> axum::response::Response {
-        let error = ErrorResponse {
-            code: StatusCode::SERVICE_UNAVAILABLE.as_u16(),
-            error: DATABASE_UNAVAILABLE.to_string(),
-        };
-        Json(error).into_response()
-    }
-}
-
-impl Error for DatabaseUnavailable {}
-
-impl Display for DatabaseUnavailable {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", DATABASE_UNAVAILABLE)
-    }
-}
-
-impl Serialize for DatabaseUnavailable {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(DATABASE_UNAVAILABLE)
     }
 }

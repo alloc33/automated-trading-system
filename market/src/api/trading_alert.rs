@@ -13,6 +13,8 @@ pub struct TradingAlert {
     pub date_time: DateTime<Utc>,
 }
 
+use axum::http::StatusCode;
+
 pub async fn process_trading_alert(
     State(app): State<Arc<App>>,
     Json(body): Json<TradingAlert>,
@@ -24,7 +26,22 @@ pub async fn process_trading_alert(
     Ok(())
 }
 
-pub async fn get_trading_alerts(State(app): State<Arc<App>>) -> Result<(), ApiError> {
+use serde::Serialize;
+
+#[derive(Debug, Serialize)]
+pub struct TestErr {
+    pub test_1: String,
+    pub test_2: String,
+}
+
+pub async fn get_trading_alerts(State(app): State<Arc<App>>) -> Result<Json<String>, ApiError> {
     info!("Getting trading alerts...");
-    Ok(())
+    let is_alert_nice = false;
+
+    // if !is_alert_nice {
+    //     return Err(ApiError::BadRequest("It's bad".to_string()))
+    // }
+
+    Err(ApiError::BadRequest("It's bad".to_string()))
+    // Ok(Json("nice alert!".to_string()))
 }

@@ -3,32 +3,43 @@ pub mod auth;
 pub mod config;
 pub mod model;
 
-use std::{net::SocketAddr, sync::Arc, time::Duration};
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    sync::{Arc, RwLock},
+    time::Duration,
+};
 
 use api::{
-    error,
+    error::{self, ApiError},
     trading_alert::{get_trading_alerts, process_trading_alert},
 };
 use auth::auth;
+// use load_shed
 use axum::{
-    body::{Body, Bytes},
-    error_handling::HandleErrorLayer,
-    http::{request::Request, response::Response, Method, StatusCode, Uri},
+    body::Body,
+    http::{request::Request, response::Response, Method, Uri},
     middleware::{from_fn_with_state, Next},
-    routing::{get, post},
-    BoxError, Extension, Router,
+    routing::post,
+    Extension,
+};
+use axum::{
+    body::Bytes,
+    error_handling::HandleErrorLayer,
+    extract::{DefaultBodyLimit, Path, State},
+    handler::Handler,
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{delete, get},
+    Router,
 };
 use config::AppConfig;
 use sqlx::{postgres::PgConnectOptions, Error as SqlxError, PgPool, Pool, Postgres};
 use thiserror::Error as ThisError;
-use tower::ServiceBuilder;
-use tower_http::{
-    classify::ServerErrorsFailureClass,
-    trace::{self, TraceLayer},
-};
+use tower::{BoxError, ServiceBuilder};
+use tower_http::{self, trace::TraceLayer};
 use tracing::{info_span, Level, Span};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-// use load_shed
 
 pub struct App {
     db: PgPool,
@@ -56,27 +67,87 @@ pub fn build_routes(app_state: Arc<App>) -> Router {
         .route("/alert", get(get_trading_alerts))
         .layer(
             ServiceBuilder::new()
+                .layer(from_fn_with_state(app_state.clone(), auth))
+                // .layer(HandleErrorLayer::new(handle_error))
+                // .load_shed()
                 .layer(
                     TraceLayer::new_for_http()
-                        .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-                        .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
-                )
-                .layer(from_fn_with_state(app_state.clone(), auth))
-                .layer(HandleErrorLayer::new(handle_timeout_error))
-                .timeout(Duration::from_secs(30))
+                        .make_span_with(
+                            tower_http::trace::DefaultMakeSpan::new().level(Level::DEBUG),
+                        )
+                        .on_response(
+                            tower_http::trace::DefaultOnResponse::new().level(Level::DEBUG),
+                        ),
+                ), /* .layer(
+                    *     tower_http::trace::DefaultMakeSpan::new().level(Level::DEBUG),
+                    *     tower_http::trace::DefaultOnResponse::new().level(Level::DEBUG),
+                    * ) */
         )
-        .with_state(app_state)
+        // .with_state(app_state)
+        .with_state(Arc::clone(&app_state))
 }
 
-async fn handle_timeout_error(
-    // `Method` and `Uri` are extractors so they can be used here
-    method: Method,
-    uri: Uri,
-    // the last argument must be the error itself
-    err: BoxError,
-) -> (StatusCode, String) {
+// async fn custom_error_handler(error: ApiError) -> (StatusCode, serde_json::Value) {
+//     // Handle ApiError
+//     // if let Some(api_error) = error.downcast_ref::<ApiError>() {
+//     // Return the appropriate status code and error message
+//     let status_code = error.http_status();
+//     let error_message = error.to_string();
+//     return (status_code, serde_json::json!({ "error": error_message }));
+//     // }
+
+//     // Handle other errors or fallback to generic internal server error
+//     // (StatusCode::INTERNAL_SERVER_ERROR, json!({ "error": "Internal server error" }))
+// }
+
+// async fn handle_error(error: ApiError) -> impl IntoResponse {
+//     // if error.is::<tower::timeout::error::Elapsed>() {
+//     //     return (StatusCode::REQUEST_TIMEOUT, Cow::from("request timed out"));
+//     // }
+
+//     // if error.is::<tower::load_shed::error::Overloaded>() {
+//     //     return (
+//     //         StatusCode::SERVICE_UNAVAILABLE,
+//     //         Cow::from("service is overloaded, try again later"),
+//     //     );
+//     // }
+
+//     // if error.is::<ApiError>() {
+//     //     return (StatusCode::UNAUTHORIZED, Cow::from("jblablabla"));
+//     // }
+
+//     (
+//         StatusCode::INTERNAL_SERVER_ERROR,
+//         Cow::from(format!("Unhandled internal error: {}", error)),
+//     )
+// }
+
+async fn handle_error(error: BoxError) -> impl IntoResponse {
+    // if error.is::<tower::timeout::error::Elapsed>() {
+    //     // Handle ApiError
+    //     let status_code = api_error.http_status();
+    //     let error_message = api_error.to_string();
+
+    //     return (status_code, error_message);
+    // }
+    //
+    //
+    println!("{error:#?}");
+    println!("somehting");
+
+    if error.is::<tower::timeout::error::Elapsed>() {
+        return (StatusCode::REQUEST_TIMEOUT, Cow::from("request timed out"));
+    }
+
+    if error.is::<tower::load_shed::error::Overloaded>() {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Cow::from("service is overloaded, try again later"),
+        );
+    }
+
     (
         StatusCode::INTERNAL_SERVER_ERROR,
-        format!("`{} {}` failed with {}", method, uri, err),
+        Cow::from(format!("Unhandled internal error: {}", error)),
     )
 }
