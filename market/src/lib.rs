@@ -18,7 +18,6 @@ use tower::ServiceBuilder;
 use tower_http::{self, trace::TraceLayer};
 use tracing::Level;
 
-
 pub struct App {
     db: PgPool,
     config: AppConfig,
