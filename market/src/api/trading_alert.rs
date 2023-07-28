@@ -1,14 +1,18 @@
 use std::sync::Arc;
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use sqlx::{Pool, Postgres};
-use tracing::info;
 use uuid::Uuid;
 
-use super::{error::ApiError, Response};
+use super::{
+    pagination::{Pagination, PaginationQuery},
+    Response,
+};
 use crate::App;
 
 #[derive(Debug, Deserialize)]
@@ -36,7 +40,7 @@ pub async fn process_trading_alert(
             modified_at
         )
         VALUES ($1, $2, NOW(), NOW())
-        RETURNING *
+        RETURNING trading_alert_id, ticker, created_at
         ",
         uuid7::new_v7(),
         body.ticker.clone()
@@ -53,20 +57,36 @@ pub async fn process_trading_alert(
     Ok((StatusCode::CREATED, Json(trading_alert)))
 }
 
-// pub async fn get_trading_alerts(State(app): State<Arc<App>>) -> Result<Response, ApiError> {
-//     // Retrieve the trading alerts here...
+pub async fn get_trading_alerts(
+    State(app): State<Arc<App>>,
+    Query(pagination): Query<PaginationQuery>,
+) -> Response<Pagination<TradingAlert>> {
+    let total = sqlx::query!("SELECT COUNT(*) as total FROM trading_alerts")
+        .fetch_one(&app.db)
+        .await?
+        .total
+        .unwrap_or_default();
 
-//     // For the purpose of this example, let's assume we retrieved some trading alerts as a list
-// of     // strings. You can replace the following line with your actual logic to retrieve the
-//     // alerts.
-//     let alerts: Vec<String> = vec!["Alert 1".to_string(), "Alert 2".to_string()];
+    let results = sqlx::query_as!(
+        TradingAlert,
+        "
+        SELECT 
+            trading_alert_id as id,
+            ticker,
+            created_at
+        FROM trading_alerts
+        ORDER BY created_at DESC
+        LIMIT $1
+        OFFSET $2
+        ",
+        pagination.limit,
+        pagination.offset
+    )
+    .fetch_all(&app.db)
+    .await?;
 
-//     // Create a mock response body containing the trading alerts.
-//     let response_body = ApiResponseBody {
-//         message: "Trading alerts retrieved.".to_string(),
-//         body: None,
-//     };
-
-//     // Return the ApiResponse with the mock response body and a status code of OK (200).
-//     Ok((StatusCode::OK, Json(response_body)))
-// }
+    Ok((
+        StatusCode::OK,
+        Json(Pagination::new(results, total, pagination)),
+    ))
+}

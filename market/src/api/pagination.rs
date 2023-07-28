@@ -1,15 +1,14 @@
 use std::fmt::Debug;
 
-use axum::extract::Query;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Deserialize)]
 pub struct PaginationQuery {
     pub offset: Option<i64>,
     pub limit: Option<i64>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Pagination<T: Debug> {
     /// Found results within [offset; offset + limit) range
     ///

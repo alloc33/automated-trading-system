@@ -41,7 +41,7 @@ pub async fn build_state(config: AppConfig) -> Result<App, SqlxError> {
 pub fn build_routes(app_state: Arc<App>) -> Router {
     Router::new()
         .route("/alert", post(api::trading_alert::process_trading_alert))
-        // .route("/alert", get(api::trading_alert::get_trading_alerts))
+        .route("/alert", get(api::trading_alert::get_trading_alerts))
         .layer(
             ServiceBuilder::new()
                 .layer(from_fn_with_state(app_state.clone(), auth))
