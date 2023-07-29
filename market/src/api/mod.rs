@@ -3,7 +3,6 @@ pub mod pagination;
 pub mod trading_alert;
 
 use axum::{http::StatusCode, Json};
-use serde::Serialize;
 
 use self::error::ApiError;
 

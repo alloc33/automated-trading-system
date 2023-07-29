@@ -5,7 +5,7 @@ default:
     just --list
 
 export RUST_LOG := env_var_or_default("RUST_LOG", "debug,sqlx=error")
-# export DATABASE_URL := "postgres://market_app:C4aMnSTFp9T9bwqDPqV8uw==@localhost:5432/market_db"
+export DATABASE_URL := "postgres://market_app:C4aMnSTFp9T9bwqDPqV8uw==@localhost:5432/market_db"
 
 # run development server
 runserver:
@@ -34,11 +34,11 @@ migrate subcommand="run":
 
 # generate market/sqlx-data.json for offline mode
 for-offline: db-start migrate
-    cd market && cargo sqlx prepare --merged -- --lib --tests
+    cd market && cargo sqlx prepare -- --lib --tests 
 
 # enter the PostgreSQL database shell
 db-shell user="market_app" db="market_db":
-    pgdb psql -d {{ db }} -U {{ user }}
+    docker-compose exec pgdb psql -d {{ db }} -U {{ user }}
 
 ##################################################
 ################### DOCKER #######################

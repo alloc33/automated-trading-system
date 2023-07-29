@@ -14,6 +14,7 @@ async fn main() {
     });
     let app = build_routes(state.into());
     let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 8000));
+    tracing::info!("Listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await

@@ -8,16 +8,11 @@ use serde::Serialize;
 use serde_json::error::Category;
 use thiserror::Error as ThisError;
 use tracing::error;
+use axum::http::Request;
 
 pub const INTERNAL_SERVER_ERROR: &str = "Internal server error occurred...";
 pub const PAYLOAD_TOO_LARGE: &str = "Request payload too large...";
 pub const DATABASE_UNAVAILABLE: &str = "Database is unavailable...";
-
-#[derive(Debug, Serialize)]
-pub struct ErrorResponse {
-    pub code: u16,
-    pub error: String,
-}
 
 #[derive(Clone, Debug, Serialize, ThisError)]
 pub enum ConstraintError {
@@ -155,6 +150,12 @@ impl ApiError {
         E: Display,
     {
         error!("{err}");
+        Self::InternalServerError
+    }
+}
+
+impl<T> From<Request<T>> for ApiError {
+    fn from(_: Request<T>) -> Self {
         Self::InternalServerError
     }
 }

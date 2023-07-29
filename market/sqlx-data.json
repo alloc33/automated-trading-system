@@ -1,0 +1,87 @@
+{
+  "db": "PostgreSQL",
+  "63a9544406ed15d89dc25abe9af7d4b426a0b334037c6851a11746cfaf10a0f5": {
+    "describe": {
+      "columns": [
+        {
+          "name": "trading_alert_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "ticker",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 2,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        INSERT INTO trading_alerts (\n            trading_alert_id,\n            ticker,\n            created_at,\n            modified_at\n        )\n        VALUES ($1, $2, NOW(), NOW())\n        RETURNING trading_alert_id, ticker, created_at\n        "
+  },
+  "6700008234acfb53fcdcab97fbcc956773b15a6b261a6dfda672468beec64562": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "ticker",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 2,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n        SELECT \n            trading_alert_id as id,\n            ticker,\n            created_at\n        FROM trading_alerts\n        ORDER BY created_at DESC\n        LIMIT $1\n        OFFSET $2\n        "
+  },
+  "aba0cf8c26660916fa2365262a1445d90b8bd33f8a3dfca15d733a5cdfea7b67": {
+    "describe": {
+      "columns": [
+        {
+          "name": "total",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT COUNT(*) as total FROM trading_alerts"
+  }
+}
