@@ -58,64 +58,19 @@ pub fn build_routes(app_state: Arc<App>) -> Router {
         .layer(
             ServiceBuilder::new()
                 .layer(from_fn_with_state(app_state.clone(), middleware::auth))
-                // .layer(
-                //     TraceLayer::new_for_http()
-                //         .make_span_with(
-                //             tower_http::trace::DefaultMakeSpan::new().level(Level::ERROR),
-                //         )
-                //         .on_response(
-                //             tower_http::trace::DefaultOnResponse::new().level(Level::ERROR),
-                //         ),
-                // )
                 .layer(
                     TraceLayer::new_for_http()
-                        .make_span_with(|request: &Request<_>| {
-                            // Log the matched route's path (with placeholders not filled in).
-                            // Use request.uri() or OriginalUri if you want the real path.
-                            let path = request
-                                .extensions()
-                                .get::<MatchedPath>()
-                                .map(MatchedPath::as_str);
-
-                            tracing::info_span!(
-                                "http_request",
-                                method = ?request.method(),
-                                path,
-                                some_other_field = tracing::field::Empty,
-                            )
-                        })
-                        .on_request(|_request: &Request<_>, _span: &Span| {
-                            tracing::info!("received request");
-                            // You can use `_span.record("some_other_field", value)` in one of these
-                            // closures to attach a value to the initially empty field in the
-                            // info_span created above.
-                        })
-                        .on_response(|_response: &Response, _latency: Duration, _span: &Span| {
-                            tracing::info!("sending response");
-                            // ...
-                        })
-                        .on_body_chunk(|_chunk: &Bytes, _latency: Duration, _span: &Span| {
-                            tracing::info!("received body chunk");
-                            // ...
-                        })
-                        .on_eos(
-                            |_trailers: Option<&HeaderMap>,
-                             _stream_duration: Duration,
-                             _span: &Span| {
-                                tracing::info!("stream ended");
-                                // ...
-                            },
+                        .make_span_with(
+                            tower_http::trace::DefaultMakeSpan::new().level(Level::INFO),
                         )
-                        .on_failure(
-                            |_error: ServerErrorsFailureClass, _latency: Duration, _span: &Span| {
-                                // ...
-                                tracing::info!("server error");
-                            },
+                        .on_response(
+                            tower_http::trace::DefaultOnResponse::new().level(Level::INFO),
                         ),
                 )
                 // NOTE: Non-get requests have to always have body currently.
                 .layer(from_fn(middleware::print_request_body))
-                .layer(from_fn(middleware::handle_error)),
+                // NOTE: This layer is not working currently.
+                // .layer(from_fn(middleware::handle_error)),
         )
         .with_state(Arc::clone(&app_state))
 }

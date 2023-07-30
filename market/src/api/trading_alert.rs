@@ -13,12 +13,15 @@ use uuid::Uuid;
 
 use super::{
     pagination::{Pagination, PaginationQuery},
-    Response,
+    Response
 };
+use axum_extra::extract::WithRejection;
 use crate::App;
+use super::error::ApiError;
 
 #[derive(Debug, Deserialize)]
 pub struct NewTradingAlert {
+    pub webhook_key: String,
     pub ticker: String,
     pub exchange: String,
     pub alert_type: AlertType,
@@ -56,8 +59,9 @@ pub struct TradingAlert {
 
 pub async fn process_trading_alert(
     State(app): State<Arc<App>>,
-    Json(alert): Json<NewTradingAlert>,
+    WithRejection(alert, _): WithRejection<Json<NewTradingAlert>, ApiError>,
 ) -> Response<TradingAlert> {
+    tracing::info!("here_1");
     let row = sqlx::query!(
         "
         INSERT INTO trading_alerts (
@@ -95,6 +99,7 @@ pub async fn process_trading_alert(
     .fetch_one(&app.db)
     .await?;
 
+    tracing::info!("here_2");
     let trading_alert = TradingAlert {
         id: row.trading_alert_id,
         ticker: row.ticker,
@@ -112,6 +117,7 @@ pub async fn process_trading_alert(
         created_at: row.created_at,
     };
 
+    tracing::info!("here_3");
     Ok((StatusCode::CREATED, Json(trading_alert)))
 }
 

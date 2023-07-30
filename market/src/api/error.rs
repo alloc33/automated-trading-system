@@ -1,14 +1,15 @@
 use std::fmt::Display;
 
 use axum::{
-    http::StatusCode,
+    http::{Request, StatusCode},
     response::{IntoResponse, Json, Response},
 };
 use serde::Serialize;
 use serde_json::error::Category;
 use thiserror::Error as ThisError;
 use tracing::error;
-use axum::http::Request;
+
+use axum::extract::rejection::JsonRejection;
 
 pub const INTERNAL_SERVER_ERROR: &str = "Internal server error occurred...";
 pub const PAYLOAD_TOO_LARGE: &str = "Request payload too large...";
@@ -32,7 +33,7 @@ impl Display for ConstraintError {
 }
 
 /// `OperationError` describes possible errors of API operations.
-#[derive(Debug, Serialize, ThisError)]
+#[derive(Debug, ThisError)]
 pub enum ApiError {
     #[error("{0}")]
     BadRequest(String),
@@ -46,12 +47,6 @@ pub enum ApiError {
     /// HTTP status code 400
     #[error("{0}")]
     IOError(String),
-
-    /// Json deserialization errors.
-    ///
-    /// HTTP status code 400
-    #[error("{0}")]
-    JsonParseError(String),
 
     /// Payload too large error.
     ///
@@ -88,17 +83,10 @@ pub enum ApiError {
     /// HTTP status code 503
     #[error("Database is unavailable...")]
     ServiceUnavailable,
+
+    #[error(transparent)]
+    JsonExtractorRejection(#[from] JsonRejection),
 }
-
-// impl From<ApiError> for (StatusCode, Json<serde_json::Value>) {
-//     fn from(error: ApiError) -> Self {
-//         let body = Json(serde_json::json!({
-//             "error": error.to_string(),
-//         }));
-
-//         (error.http_status(), body)
-//     }
-// }
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
@@ -106,7 +94,7 @@ impl IntoResponse for ApiError {
             Self::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             Self::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             Self::IOError(msg) => (StatusCode::BAD_REQUEST, msg),
-            Self::JsonParseError(msg) => (StatusCode::BAD_REQUEST, msg),
+            Self::JsonExtractorRejection(rejection) => (StatusCode::BAD_REQUEST, rejection.to_string()),
             Self::PayloadTooLarge => (StatusCode::PAYLOAD_TOO_LARGE, PAYLOAD_TOO_LARGE.to_owned()),
             Self::InternalServerError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -128,12 +116,26 @@ impl IntoResponse for ApiError {
     }
 }
 
+impl From<StatusCode> for ApiError {
+    fn from(status: StatusCode) -> Self {
+        match status {
+            StatusCode::BAD_REQUEST => Self::BadRequest("Bad request".to_owned()),
+            StatusCode::NOT_FOUND => Self::NotFound("Not found".to_owned()),
+            StatusCode::PAYLOAD_TOO_LARGE => Self::PayloadTooLarge,
+            StatusCode::INTERNAL_SERVER_ERROR => Self::InternalServerError,
+            StatusCode::SERVICE_UNAVAILABLE => Self::ServiceUnavailable,
+            StatusCode::UNAUTHORIZED => Self::Unauthorized("Unauthorized".to_owned()),
+            _ => Self::InternalServerError,
+        }
+    }
+}
+
 // Convenience methods and constructors of particular types of error
 impl ApiError {
     #[must_use]
     pub fn http_status(&self) -> StatusCode {
         match self {
-            Self::JsonParseError(_)
+            Self::JsonExtractorRejection(_)
             | Self::IOError(_)
             | Self::BadRequest(_)
             | Self::NotFound(_) => StatusCode::BAD_REQUEST,
@@ -190,16 +192,6 @@ impl From<sqlx::Error> for ApiError {
                 Err(_) => Self::ServiceUnavailable,
             },
             _ => Self::InternalServerError,
-        }
-    }
-}
-
-impl From<serde_json::Error> for ApiError {
-    fn from(err: serde_json::Error) -> Self {
-        if matches!(err.classify(), Category::Data) {
-            ApiError::BadRequest(err.to_string())
-        } else {
-            ApiError::JsonParseError(err.to_string())
         }
     }
 }
