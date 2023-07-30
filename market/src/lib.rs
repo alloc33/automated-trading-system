@@ -7,9 +7,9 @@ use std::{sync::Arc, time::Duration};
 
 use api::*;
 use axum::{
-    body::Bytes,
+    body::{Bytes, HttpBody},
     extract::MatchedPath,
-    http::{HeaderMap, Request},
+    http::{HeaderMap, Request, StatusCode},
     middleware::{from_fn, from_fn_with_state},
     response::{Html, Response},
     routing::{get, post},
@@ -58,19 +58,8 @@ pub fn build_routes(app_state: Arc<App>) -> Router {
         .layer(
             ServiceBuilder::new()
                 .layer(from_fn_with_state(app_state.clone(), middleware::auth))
-                .layer(
-                    TraceLayer::new_for_http()
-                        .make_span_with(
-                            tower_http::trace::DefaultMakeSpan::new().level(Level::INFO),
-                        )
-                        .on_response(
-                            tower_http::trace::DefaultOnResponse::new().level(Level::INFO),
-                        ),
-                )
-                // NOTE: Non-get requests have to always have body currently.
-                .layer(from_fn(middleware::print_request_body))
-                // NOTE: This layer is not working currently.
-                // .layer(from_fn(middleware::handle_error)),
+                .layer(from_fn(middleware::log_request))
+                .layer(from_fn(middleware::log_response)),
         )
         .with_state(Arc::clone(&app_state))
 }

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{io::Write, sync::Arc};
 
 use axum::{
     body::Body,
@@ -6,8 +6,8 @@ use axum::{
     http::{header, Request, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
-    Json,
 };
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::{error::ApiError, App};
 
@@ -35,51 +35,125 @@ pub async fn auth<B>(
     ))
 }
 
-pub async fn print_request_body(
-    request: Request<Body>,
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct JsonResponse {
+    message: String,
+}
+
+pub async fn log_request(
+    mut request: Request<Body>,
     next: Next<Body>,
 ) -> Result<impl IntoResponse, Response> {
-    if request.method() == axum::http::Method::GET {
-        return Ok(next.run(request).await);
-    }
+    let (parts, body) = request.into_parts();
+    let bytes = body_to_bytes(body).await?;
+    let json = serde_json::from_slice::<serde_json::Value>(&bytes)
+        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?;
 
-    let request = buffer_request_body(request).await?;
+    let pretty_json = match serde_json::from_slice::<serde_json::Value>(&bytes) {
+        Ok(json) => serde_json::to_string_pretty(&json).unwrap_or_default(),
+        Err(_) => String::from_utf8_lossy(&bytes).into_owned(),
+    };
 
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
+    // Log separator for request
+    let separator = "\n\n-----------------------request-----------------------\n";
+    stdout
+        .set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))
+        .unwrap();
+    writeln!(&mut stdout, "{}", separator).unwrap();
+
+    // Log method and URI
+    stdout
+        .set_color(ColorSpec::new().set_fg(Some(Color::Yellow)))
+        .unwrap();
+    writeln!(&mut stdout, "{} {}", parts.method, parts.uri).unwrap();
+
+    // Log headers
+    stdout
+        .set_color(ColorSpec::new().set_fg(Some(Color::Magenta)))
+        .unwrap();
+    writeln!(&mut stdout, "{:#?}", parts.headers).unwrap();
+
+    // Log JSON body
+    stdout
+        .set_color(ColorSpec::new().set_fg(Some(Color::White)))
+        .unwrap();
+    writeln!(&mut stdout, "{}", pretty_json).unwrap();
+
+    stdout.reset().unwrap();
+
+    request = Request::from_parts(parts, Body::from(bytes));
     Ok(next.run(request).await)
 }
 
-// the trick is to take the request apart, buffer the body, do what you need to do, then put
-// the request back together
-async fn buffer_request_body(request: Request<Body>) -> Result<Request<Body>, Response> {
-    let (parts, body) = request.into_parts();
+pub async fn log_response(
+    request: Request<Body>,
+    next: Next<Body>,
+) -> Result<impl IntoResponse, Response> {
+    let method = request.method();
+    let response = next.run(request).await;
+    let status = response.status();
 
-    // this wont work if the body is an long running stream
+    let (parts, body) = response.into_parts();
     let bytes = hyper::body::to_bytes(body)
         .await
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?;
-    let json = serde_json::from_slice::<serde_json::Value>(&bytes)
-        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?;
-    tracing::debug!("\n\n{json:#?}\n");
 
-    Ok(Request::from_parts(parts, Body::from(bytes)))
+    let pretty_json = match method {
+        &axum::http::Method::GET => "",
+        _ => match serde_json::from_slice::<serde_json::Value>(&bytes) {
+            Ok(json) => serde_json::to_string_pretty(&json).unwrap_or_default(),
+            Err(_) => String::from_utf8_lossy(&bytes).into_owned(),
+        },
+    };
+
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
+    // Log separator for response
+    let separator = "\n\n-----------------------response-----------------------\n";
+    stdout
+        .set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))
+        .unwrap();
+    writeln!(&mut stdout, "{}", separator).unwrap();
+
+    match status.as_u16() {
+        200..=299 => {
+            stdout
+                .set_color(ColorSpec::new().set_fg(Some(Color::Green)))
+                .unwrap();
+            writeln!(&mut stdout, "response: {}", status).unwrap();
+        }
+        _ => {
+            stdout
+                .set_color(ColorSpec::new().set_fg(Some(Color::Red)))
+                .unwrap();
+            writeln!(&mut stdout, "response: {}", status).unwrap();
+        }
+    }
+
+    stdout.reset().unwrap();
+
+    // Log headers
+    stdout
+        .set_color(ColorSpec::new().set_fg(Some(Color::Magenta)))
+        .unwrap();
+    writeln!(&mut stdout, "{:#?}", parts.headers).unwrap();
+
+    // Log JSON body
+    stdout
+        .set_color(ColorSpec::new().set_fg(Some(Color::White)))
+        .unwrap();
+    writeln!(&mut stdout, "{}", pretty_json).unwrap();
+
+    stdout.reset().unwrap();
+
+    Ok(Response::from_parts(parts, Body::from(bytes)))
 }
 
-// NOTE: Trying to find a way to change error response body to a specific if it's not satisfy json
-// format: 
-// {
-//    "error": ...
-// }
-
-// pub async fn handle_error<B>(req: Request<B>, next: Next<B>) -> impl IntoResponse {
-//     let resp = next.run(req).await;
-//     match resp.status() {
-//         StatusCode::UNPROCESSABLE_ENTITY => {
-//             let body = Json(serde_json::json!({
-//                 "error": "it works"
-//             }));
-
-//             Err((StatusCode::UNPROCESSABLE_ENTITY, body).into_response())
-//         }
-//         _ => Ok(resp),
-//     }
-// }
+async fn body_to_bytes(body: Body) -> Result<Vec<u8>, Response> {
+    let bytes = hyper::body::to_bytes(body)
+        .await
+        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?;
+    Ok(bytes.to_vec())
+}

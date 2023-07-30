@@ -5,6 +5,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
+use axum_extra::extract::WithRejection;
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -12,12 +13,11 @@ use strum_macros::{AsRefStr, EnumString};
 use uuid::Uuid;
 
 use super::{
+    error::ApiError,
     pagination::{Pagination, PaginationQuery},
-    Response
+    Response,
 };
-use axum_extra::extract::WithRejection;
 use crate::App;
-use super::error::ApiError;
 
 #[derive(Debug, Deserialize)]
 pub struct NewTradingAlert {
@@ -133,10 +133,10 @@ pub async fn get_trading_alerts(
 
     // let results = sqlx::query!(
     //     "
-    //     SELECT 
+    //     SELECT
     //         trading_alert_id as id,
     //         ticker,
-    //         exchange, 
+    //         exchange,
     //         alert_type,
     //         bar_time,
     //         bar_open,
@@ -175,8 +175,5 @@ pub async fn get_trading_alerts(
     // })
     // .collect::<Vec<_>>();
 
-    Ok((
-        StatusCode::OK,
-        Json(Pagination::new(vec![], 0, pagination)),
-    ))
+    Ok((StatusCode::OK, Json(Pagination::new(vec![], 0, pagination))))
 }

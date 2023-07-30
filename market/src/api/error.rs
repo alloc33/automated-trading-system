@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use axum::{
+    extract::rejection::JsonRejection,
     http::{Request, StatusCode},
     response::{IntoResponse, Json, Response},
 };
@@ -8,8 +9,6 @@ use serde::Serialize;
 use serde_json::error::Category;
 use thiserror::Error as ThisError;
 use tracing::error;
-
-use axum::extract::rejection::JsonRejection;
 
 pub const INTERNAL_SERVER_ERROR: &str = "Internal server error occurred...";
 pub const PAYLOAD_TOO_LARGE: &str = "Request payload too large...";
@@ -94,7 +93,9 @@ impl IntoResponse for ApiError {
             Self::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             Self::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             Self::IOError(msg) => (StatusCode::BAD_REQUEST, msg),
-            Self::JsonExtractorRejection(rejection) => (StatusCode::BAD_REQUEST, rejection.to_string()),
+            Self::JsonExtractorRejection(rejection) => {
+                (StatusCode::BAD_REQUEST, rejection.to_string())
+            }
             Self::PayloadTooLarge => (StatusCode::PAYLOAD_TOO_LARGE, PAYLOAD_TOO_LARGE.to_owned()),
             Self::InternalServerError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
