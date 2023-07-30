@@ -7,21 +7,13 @@ use std::{sync::Arc, time::Duration};
 
 use api::*;
 use axum::{
-    body::{Bytes, HttpBody},
-    extract::MatchedPath,
-    http::{HeaderMap, Request, StatusCode},
     middleware::{from_fn, from_fn_with_state},
-    response::{Html, Response},
     routing::{get, post},
     Router,
 };
 use config::AppConfig;
 use sqlx::{postgres::PgConnectOptions, Error as SqlxError, PgPool};
-use tokio::net::TcpListener;
 use tower::ServiceBuilder;
-use tower_http::{self, classify::ServerErrorsFailureClass, trace::TraceLayer};
-use tracing::{info_span, Level, Span};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 pub struct App {
     db: PgPool,

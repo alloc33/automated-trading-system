@@ -44,20 +44,22 @@ pub async fn log_request(
     mut request: Request<Body>,
     next: Next<Body>,
 ) -> Result<impl IntoResponse, Response> {
+    let method = request.method().clone();
     let (parts, body) = request.into_parts();
-    let bytes = body_to_bytes(body).await?;
-    let json = serde_json::from_slice::<serde_json::Value>(&bytes)
-        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?;
+    let mut bytes = vec![];
+    let mut body_string = String::new();
 
-    let pretty_json = match serde_json::from_slice::<serde_json::Value>(&bytes) {
-        Ok(json) => serde_json::to_string_pretty(&json).unwrap_or_default(),
-        Err(_) => String::from_utf8_lossy(&bytes).into_owned(),
-    };
-
+    if method == axum::http::Method::POST {
+        bytes = body_to_bytes(body).await?;
+        body_string = match serde_json::from_slice::<serde_json::Value>(&bytes) {
+            Ok(json) => serde_json::to_string_pretty(&json).unwrap_or_default(),
+            Err(_) => String::from_utf8_lossy(&bytes).into_owned(),
+        };
+    }
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
 
     // Log separator for request
-    let separator = "\n\n-----------------------request-----------------------\n";
+    let separator = "\n-----------------------request-----------------------\n";
     stdout
         .set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))
         .unwrap();
@@ -75,11 +77,13 @@ pub async fn log_request(
         .unwrap();
     writeln!(&mut stdout, "{:#?}", parts.headers).unwrap();
 
-    // Log JSON body
-    stdout
-        .set_color(ColorSpec::new().set_fg(Some(Color::White)))
-        .unwrap();
-    writeln!(&mut stdout, "{}", pretty_json).unwrap();
+    if method == axum::http::Method::POST {
+        // Log JSON body
+        stdout
+            .set_color(ColorSpec::new().set_fg(Some(Color::White)))
+            .unwrap();
+        writeln!(&mut stdout, "{}", body_string).unwrap();
+    }
 
     stdout.reset().unwrap();
 
@@ -91,7 +95,7 @@ pub async fn log_response(
     request: Request<Body>,
     next: Next<Body>,
 ) -> Result<impl IntoResponse, Response> {
-    let method = request.method();
+    let method = request.method().clone();
     let response = next.run(request).await;
     let status = response.status();
 
@@ -100,22 +104,23 @@ pub async fn log_response(
         .await
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?;
 
-    let pretty_json = match method {
-        &axum::http::Method::GET => "",
-        _ => match serde_json::from_slice::<serde_json::Value>(&bytes) {
-            Ok(json) => serde_json::to_string_pretty(&json).unwrap_or_default(),
-            Err(_) => String::from_utf8_lossy(&bytes).into_owned(),
-        },
-    };
+    let mut pretty_json = String::new();
+    if method != axum::http::Method::GET {
+        if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+            pretty_json = serde_json::to_string_pretty(&json).unwrap_or_default();
+        } else {
+            pretty_json = String::from_utf8_lossy(&bytes).to_string();
+        }
+    }
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
 
     // Log separator for response
-    let separator = "\n\n-----------------------response-----------------------\n";
+    let separator = "\n-----------------------response-----------------------\n\n";
     stdout
         .set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))
         .unwrap();
-    writeln!(&mut stdout, "{}", separator).unwrap();
+    write!(&mut stdout, "{}", separator).unwrap();
 
     match status.as_u16() {
         200..=299 => {
@@ -140,12 +145,15 @@ pub async fn log_response(
         .unwrap();
     writeln!(&mut stdout, "{:#?}", parts.headers).unwrap();
 
-    // Log JSON body
-    stdout
-        .set_color(ColorSpec::new().set_fg(Some(Color::White)))
-        .unwrap();
-    writeln!(&mut stdout, "{}", pretty_json).unwrap();
+    // Log JSON body for non-GET requests
+    if !pretty_json.is_empty() {
+        stdout
+            .set_color(ColorSpec::new().set_fg(Some(Color::White)))
+            .unwrap();
+        writeln!(&mut stdout, "{}", pretty_json).unwrap();
+    }
 
+    writeln!(&mut stdout, "").unwrap();
     stdout.reset().unwrap();
 
     Ok(Response::from_parts(parts, Body::from(bytes)))
