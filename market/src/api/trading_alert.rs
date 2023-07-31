@@ -24,26 +24,10 @@ pub struct NewTradingAlert {
     pub webhook_key: String,
     pub ticker: String,
     pub exchange: String,
+    #[serde(rename = "type")]
     pub alert_type: AlertType,
-    pub bar_data: BarData,
-    pub alert_fire_time: DateTime<Utc>,
-}
-
-#[derive(Debug, Deserialize, Serialize, EnumString, AsRefStr)]
-#[strum(serialize_all = "snake_case")]
-pub enum AlertType {
-    Long,
-    Short,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct BarData {
-    bar_time: DateTime<Utc>,
-    bar_open: Decimal,
-    bar_high: Decimal,
-    bar_low: Decimal,
-    bar_close: Decimal,
-    bar_volume: Decimal,
+    pub bar: BarData,
+    pub time: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -51,17 +35,36 @@ pub struct TradingAlert {
     pub id: Uuid,
     pub ticker: String,
     pub exchange: String,
+    #[serde(rename = "type")]
     pub alert_type: AlertType,
-    pub bar_data: BarData,
-    pub alert_fire_time: DateTime<Utc>,
+    pub bar: BarData,
+    pub time: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize, Serialize, EnumString, AsRefStr)]
+#[strum(serialize_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum AlertType {
+    Long,
+    Short,
+    Nothing
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BarData {
+    time: DateTime<Utc>,
+    open: Decimal,
+    high: Decimal,
+    low: Decimal,
+    close: Decimal,
+    volume: Decimal,
 }
 
 pub async fn process_trading_alert(
     State(app): State<Arc<App>>,
     WithRejection(alert, _): WithRejection<Json<NewTradingAlert>, ApiError>,
 ) -> Response<TradingAlert> {
-    tracing::info!("here_1");
     let row = sqlx::query!(
         "
         INSERT INTO trading_alerts (
@@ -88,36 +91,34 @@ pub async fn process_trading_alert(
         alert.ticker,
         alert.exchange,
         alert.alert_type.as_ref(),
-        alert.bar_data.bar_time,
-        alert.bar_data.bar_open,
-        alert.bar_data.bar_high,
-        alert.bar_data.bar_low,
-        alert.bar_data.bar_close,
-        alert.bar_data.bar_volume,
-        alert.alert_fire_time
+        alert.bar.time,
+        alert.bar.open,
+        alert.bar.high,
+        alert.bar.low,
+        alert.bar.close,
+        alert.bar.volume,
+        alert.time
     )
     .fetch_one(&app.db)
     .await?;
 
-    tracing::info!("here_2");
     let trading_alert = TradingAlert {
         id: row.trading_alert_id,
         ticker: row.ticker,
         exchange: row.exchange,
         alert_type: AlertType::from_str(&row.alert_type).expect("Invalid alert type"),
-        bar_data: BarData {
-            bar_time: row.bar_time,
-            bar_open: row.bar_open,
-            bar_high: row.bar_high,
-            bar_low: row.bar_low,
-            bar_close: row.bar_close,
-            bar_volume: row.bar_volume,
+        bar: BarData {
+            time: row.bar_time,
+            open: row.bar_open,
+            high: row.bar_high,
+            low: row.bar_low,
+            close: row.bar_close,
+            volume: row.bar_volume,
         },
-        alert_fire_time: row.alert_fire_time,
+        time: row.alert_fire_time,
         created_at: row.created_at,
     };
 
-    tracing::info!("here_3");
     Ok((StatusCode::CREATED, Json(trading_alert)))
 }
 
