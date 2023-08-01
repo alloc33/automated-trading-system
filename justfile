@@ -20,7 +20,7 @@ check:
 ##################################################
 
 db-start:
-    docker-compose up -d pgdb pgAdmin
+    docker-compose up -d pgdb #pgAdmin
 
 # start with a clean database
 db-fresh: && migrate
