@@ -5,7 +5,7 @@ services:
       context: .
       target: market
     ports:
-      - "8888:8000"
+      - "8888:8080"
     depends_on:
       - pgdb
 
