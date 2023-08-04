@@ -1,0 +1,98 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO trading_alerts (\n            trading_alert_id,\n            ticker,\n            exchange, \n            alert_type,\n            bar_time,\n            bar_open,\n            bar_high,\n            bar_low,\n            bar_close,\n            bar_volume,\n            alert_fire_time,\n            created_at,\n            modified_at\n        )\n        VALUES (\n            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()\n        )\n        RETURNING trading_alert_id,\n                ticker,\n                exchange,\n                alert_type,\n                bar_time,\n                bar_open as \"bar_open: Price\",\n                bar_high as \"bar_high: Price\",\n                bar_low as \"bar_low: Price\",\n                bar_close as \"bar_close: Price\",\n                bar_volume,\n                alert_fire_time,\n                created_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "trading_alert_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "ticker",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "exchange",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "alert_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "bar_time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "bar_open: Price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "bar_high: Price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "bar_low: Price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 8,
+        "name": "bar_close: Price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "bar_volume",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 10,
+        "name": "alert_fire_time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "45d639352af2cf1ad500c224875752cd64cde761894d492f43059423c1cdfe54"
+}
