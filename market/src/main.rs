@@ -13,7 +13,7 @@ async fn main() {
         std::process::exit(1);
     });
     let app = build_routes(state.into());
-    let addr = SocketAddr::from((Ipv4Addr::new(0, 0, 0, 0), 8080));
+    let addr = SocketAddr::from((Ipv4Addr::new(0, 0, 0, 0), 8000));
     tracing::info!("Listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

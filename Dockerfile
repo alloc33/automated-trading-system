@@ -19,6 +19,7 @@ ARG PGPORT=5432
 ARG MARKET_PROFILE=test
 
 ENV RUST_BACKTRACE=full
+ENV SQLX_OFFLINE=true
 ENV DATABASE_URL="postgres://market_app@${PGHOST}:${PGPORT}/market_db"
 
 RUN cargo chef prepare --recipe-path recipe.json
@@ -35,5 +36,5 @@ RUN cargo build --release --target x86_64-unknown-linux-musl
 # We do not need the Rust toolchain to run the binary!
 FROM scratch
 COPY --from=builder /market/target/x86_64-unknown-linux-musl/release/market /usr/local/bin/market
-EXPOSE 8080
+EXPOSE 8000
 ENTRYPOINT [ "market" ]
