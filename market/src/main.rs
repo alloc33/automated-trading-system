@@ -1,7 +1,5 @@
-use std::net::SocketAddr;
-
+use std::net::{Ipv4Addr, SocketAddr};
 use market::{build_routes, build_state, config::AppConfig};
-use tower::make::Shared;
 
 #[tokio::main]
 async fn main() {
@@ -13,14 +11,11 @@ async fn main() {
         tracing::error!(error=%err, "Cannot connect to database");
         std::process::exit(1);
     });
-
     let app = build_routes(state.into());
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
-    tracing::debug!("listening on {}", addr);
-    hyper::Server::bind(&addr)
-        .http1_preserve_header_case(true)
-        .http1_title_case_headers(true)
-        .serve(Shared::new(app))
+    let addr = SocketAddr::from((Ipv4Addr::new(0, 0, 0, 0), 8000));
+    tracing::info!("Listening on {}", addr);
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
         .await
         .unwrap();
 }
