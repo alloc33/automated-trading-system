@@ -1,5 +1,8 @@
 FROM messense/rust-musl-cross:x86_64-musl as chef
 
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+ENV SQLX_OFFLINE=true
+
 # Create app user
 ARG USER=user
 ARG GROUP=user
@@ -16,10 +19,8 @@ COPY . .
 
 ARG PGHOST=localhost
 ARG PGPORT=5432
-ARG MARKET_PROFILE=test
 
 ENV RUST_BACKTRACE=full
-ENV SQLX_OFFLINE=true
 ENV DATABASE_URL="postgres://market_app@${PGHOST}:${PGPORT}/market_db"
 
 RUN cargo chef prepare --recipe-path recipe.json
