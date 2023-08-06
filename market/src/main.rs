@@ -1,4 +1,5 @@
 use std::net::{Ipv4Addr, SocketAddr};
+
 use market::{build_routes, build_state, config::AppConfig};
 
 #[tokio::main]

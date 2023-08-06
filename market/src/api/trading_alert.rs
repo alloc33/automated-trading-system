@@ -41,6 +41,7 @@ use crate::{objects::Price, App};
 pub struct NewTradingAlert {
     pub webhook_key: String,
     pub ticker: String,
+    pub timeframe: String,
     pub exchange: String,
     #[serde(rename = "type")]
     pub alert_type: AlertType,
@@ -52,6 +53,7 @@ pub struct NewTradingAlert {
 pub struct TradingAlert {
     pub id: Uuid,
     pub ticker: String,
+    pub timeframe: String,
     pub exchange: String,
     #[serde(rename = "type")]
     pub alert_type: AlertType,
@@ -94,6 +96,7 @@ pub async fn process_trading_alert(
         INSERT INTO trading_alerts (
             trading_alert_id,
             ticker,
+            timeframe,
             exchange, 
             alert_type,
             bar_time,
@@ -107,10 +110,11 @@ pub async fn process_trading_alert(
             modified_at
         )
         VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
         )
         RETURNING trading_alert_id,
                 ticker,
+                timeframe,
                 exchange,
                 alert_type,
                 bar_time,
@@ -124,6 +128,7 @@ pub async fn process_trading_alert(
         "#,
         uuid7::new_v7(),
         alert.ticker,
+        alert.timeframe,
         alert.exchange,
         alert.alert_type.as_ref(),
         alert.bar.time,
@@ -140,6 +145,7 @@ pub async fn process_trading_alert(
     let trading_alert = TradingAlert {
         id: row.trading_alert_id,
         ticker: row.ticker,
+        timeframe: row.timeframe,
         exchange: row.exchange,
         alert_type: AlertType::from_str(&row.alert_type).expect("Invalid alert type"),
         bar: BarData {
@@ -172,6 +178,7 @@ pub async fn get_trading_alerts(
         SELECT
             trading_alert_id as id,
             ticker,
+            timeframe,
             exchange,
             alert_type,
             bar_time,
@@ -196,6 +203,7 @@ pub async fn get_trading_alerts(
     .map(|row| TradingAlert {
         id: row.id,
         ticker: row.ticker.clone(),
+        timeframe: row.timeframe.clone(),
         exchange: row.exchange.clone(),
         alert_type: AlertType::from_str(&row.alert_type).expect("Invalid alert type"),
         bar: BarData {

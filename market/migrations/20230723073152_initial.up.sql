@@ -2,6 +2,7 @@ CREATE TABLE trading_alerts
 (
 	trading_alert_id  Uuid,
 	ticker			  Text NOT NULL,
+	timeframe		  Text NOT NULL,
 	exchange		  Text NOT NULL,
 	alert_type        Text NOT NULL,
 	bar_time          Timestamptz NOT NULL,
