@@ -7,6 +7,7 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
 };
+use chrono::{DateTime, FixedOffset, Utc};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::{error::ApiError, App};
@@ -56,15 +57,20 @@ pub async fn log_request(
             Err(_) => String::from_utf8_lossy(&bytes).into_owned(),
         };
     }
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
 
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
     // Log separator for request
-    let separator = "\n-----------------------request-----------------------\n";
+    let separator = "\n-----------------------request-----------------------";
     stdout
         .set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))
         .unwrap();
     writeln!(&mut stdout, "{}", separator).unwrap();
 
+    let time: DateTime<FixedOffset> =
+        Utc::now().with_timezone(&FixedOffset::east_opt(8 * 3600).unwrap());
+    writeln!(&mut stdout, "Time (UTC+8): {time}").unwrap();
+
+    writeln!(&mut stdout, "\n").unwrap();
     // Log method and URI
     stdout
         .set_color(ColorSpec::new().set_fg(Some(Color::Yellow)))
@@ -114,13 +120,16 @@ pub async fn log_response(
     }
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
-
     // Log separator for response
-    let separator = "\n-----------------------response-----------------------\n\n";
+    let separator = "\n-----------------------response-----------------------\n";
     stdout
         .set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))
         .unwrap();
     write!(&mut stdout, "{}", separator).unwrap();
+    let time: DateTime<FixedOffset> =
+        Utc::now().with_timezone(&FixedOffset::east_opt(8 * 3600).unwrap());
+    writeln!(&mut stdout, "Time (UTC+8): {time}").unwrap();
+    writeln!(&mut stdout, "\n").unwrap();
 
     match status.as_u16() {
         200..=299 => {
@@ -153,7 +162,6 @@ pub async fn log_response(
         writeln!(&mut stdout, "{}", pretty_json).unwrap();
     }
 
-    writeln!(&mut stdout, "").unwrap();
     stdout.reset().unwrap();
 
     Ok(Response::from_parts(parts, Body::from(bytes)))
