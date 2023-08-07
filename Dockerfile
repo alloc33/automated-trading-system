@@ -1,6 +1,5 @@
 FROM messense/rust-musl-cross:x86_64-musl as chef
 
-ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 ENV SQLX_OFFLINE=true
 
 # Create app user
