@@ -50,7 +50,7 @@ pub struct NewTradingAlert {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct TradingAlert {
+pub struct Alert {
     pub id: Uuid,
     pub ticker: String,
     pub timeframe: String,
@@ -68,6 +68,7 @@ pub struct TradingAlert {
 pub enum AlertType {
     Long,
     Short,
+    StopLoss,
     Unknown,
 }
 
@@ -81,10 +82,10 @@ pub struct BarData {
     volume: Decimal,
 }
 
-pub async fn process_trading_alert(
+pub async fn process_alert(
     State(app): State<Arc<App>>,
     WithRejection(alert, _): WithRejection<Json<NewTradingAlert>, ApiError>,
-) -> Response<TradingAlert> {
+) -> Response<Alert> {
     if !is_valid_webhook_key(&alert.webhook_key) {
         return Err(ApiError::Unauthorized(
             "Webhook key is not correct or doesn't exist".to_string(),
@@ -93,8 +94,8 @@ pub async fn process_trading_alert(
 
     let row = sqlx::query!(
         r#"
-        INSERT INTO trading_alerts (
-            trading_alert_id,
+        INSERT INTO alerts (
+            alert_id,
             ticker,
             timeframe,
             exchange, 
@@ -112,7 +113,7 @@ pub async fn process_trading_alert(
         VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
         )
-        RETURNING trading_alert_id,
+        RETURNING alert_id,
                 ticker,
                 timeframe,
                 exchange,
@@ -142,8 +143,8 @@ pub async fn process_trading_alert(
     .fetch_one(&app.db)
     .await?;
 
-    let trading_alert = TradingAlert {
-        id: row.trading_alert_id,
+    let alert = Alert {
+        id: row.alert_id,
         ticker: row.ticker,
         timeframe: row.timeframe,
         exchange: row.exchange,
@@ -160,14 +161,14 @@ pub async fn process_trading_alert(
         created_at: row.created_at,
     };
 
-    Ok((StatusCode::CREATED, Json(trading_alert)))
+    Ok((StatusCode::CREATED, Json(alert)))
 }
 
-pub async fn get_trading_alerts(
+pub async fn get_alerts(
     State(app): State<Arc<App>>,
     Query(pagination): Query<PaginationQuery>,
-) -> Response<Pagination<TradingAlert>> {
-    let total = sqlx::query!("SELECT COUNT(*) as total FROM trading_alerts")
+) -> Response<Pagination<Alert>> {
+    let total = sqlx::query!("SELECT COUNT(*) as total FROM alerts")
         .fetch_one(&app.db)
         .await?
         .total
@@ -176,7 +177,7 @@ pub async fn get_trading_alerts(
     let results = sqlx::query!(
         r#"
         SELECT
-            trading_alert_id as id,
+            alert_id as id,
             ticker,
             timeframe,
             exchange,
@@ -189,7 +190,7 @@ pub async fn get_trading_alerts(
             bar_volume,
             alert_fire_time,
             created_at
-        FROM trading_alerts
+        FROM alerts
         ORDER BY created_at DESC
         LIMIT $1
         OFFSET $2
@@ -200,7 +201,7 @@ pub async fn get_trading_alerts(
     .fetch_all(&app.db)
     .await?
     .iter()
-    .map(|row| TradingAlert {
+    .map(|row| Alert {
         id: row.id,
         ticker: row.ticker.clone(),
         timeframe: row.timeframe.clone(),

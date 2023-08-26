@@ -1,11 +1,11 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            trading_alert_id as id,\n            ticker,\n            timeframe,\n            exchange,\n            alert_type,\n            bar_time,\n            bar_open as \"bar_open: Price\",\n            bar_high as \"bar_high: Price\",\n            bar_low as \"bar_low: Price\",\n            bar_close as \"bar_close: Price\",\n            bar_volume,\n            alert_fire_time,\n            created_at\n        FROM trading_alerts\n        ORDER BY created_at DESC\n        LIMIT $1\n        OFFSET $2\n        ",
+  "query": "\n        INSERT INTO alerts (\n            alert_id,\n            ticker,\n            timeframe,\n            exchange, \n            alert_type,\n            bar_time,\n            bar_open,\n            bar_high,\n            bar_low,\n            bar_close,\n            bar_volume,\n            alert_fire_time,\n            created_at,\n            modified_at\n        )\n        VALUES (\n            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()\n        )\n        RETURNING alert_id,\n                ticker,\n                timeframe,\n                exchange,\n                alert_type,\n                bar_time,\n                bar_open as \"bar_open: Price\",\n                bar_high as \"bar_high: Price\",\n                bar_low as \"bar_low: Price\",\n                bar_close as \"bar_close: Price\",\n                bar_volume,\n                alert_fire_time,\n                created_at\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
+        "name": "alert_id",
         "type_info": "Uuid"
       },
       {
@@ -71,8 +71,18 @@
     ],
     "parameters": {
       "Left": [
-        "Int8",
-        "Int8"
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Timestamptz"
       ]
     },
     "nullable": [
@@ -91,5 +101,5 @@
       false
     ]
   },
-  "hash": "b837f1d1f3702589c005dd8a95fe697bc9032168083748df06a6ecdd933a117a"
+  "hash": "911474cb8176013ea4ad51e7995e06ef829c78149ff679b2ef53bcab0c65d7c9"
 }

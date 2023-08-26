@@ -1,11 +1,11 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        INSERT INTO trading_alerts (\n            trading_alert_id,\n            ticker,\n            timeframe,\n            exchange, \n            alert_type,\n            bar_time,\n            bar_open,\n            bar_high,\n            bar_low,\n            bar_close,\n            bar_volume,\n            alert_fire_time,\n            created_at,\n            modified_at\n        )\n        VALUES (\n            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()\n        )\n        RETURNING trading_alert_id,\n                ticker,\n                timeframe,\n                exchange,\n                alert_type,\n                bar_time,\n                bar_open as \"bar_open: Price\",\n                bar_high as \"bar_high: Price\",\n                bar_low as \"bar_low: Price\",\n                bar_close as \"bar_close: Price\",\n                bar_volume,\n                alert_fire_time,\n                created_at\n        ",
+  "query": "\n        SELECT\n            alert_id as id,\n            ticker,\n            timeframe,\n            exchange,\n            alert_type,\n            bar_time,\n            bar_open as \"bar_open: Price\",\n            bar_high as \"bar_high: Price\",\n            bar_low as \"bar_low: Price\",\n            bar_close as \"bar_close: Price\",\n            bar_volume,\n            alert_fire_time,\n            created_at\n        FROM alerts\n        ORDER BY created_at DESC\n        LIMIT $1\n        OFFSET $2\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "trading_alert_id",
+        "name": "id",
         "type_info": "Uuid"
       },
       {
@@ -71,18 +71,8 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Text",
-        "Text",
-        "Text",
-        "Text",
-        "Timestamptz",
-        "Numeric",
-        "Numeric",
-        "Numeric",
-        "Numeric",
-        "Numeric",
-        "Timestamptz"
+        "Int8",
+        "Int8"
       ]
     },
     "nullable": [
@@ -101,5 +91,5 @@
       false
     ]
   },
-  "hash": "846f665c9456fdc78aef89665acdbf82e42ef59b969589f39715e3a1f28b5e2d"
+  "hash": "e609259eef19fcc60d5b1c5978bdcbbedd9733a862c125d22d44a377caba0668"
 }

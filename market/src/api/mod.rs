@@ -1,6 +1,6 @@
 pub mod error;
 pub mod pagination;
-pub mod trading_alert;
+pub mod alert;
 
 use axum::{http::StatusCode, Json};
 

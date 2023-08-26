@@ -58,3 +58,6 @@ alias t := test
 test test_name="" package="market":
     cargo test -p {{ package }} --color always {{ test_name }} --
 
+apply_fixtures files="-f market/tests/fixtures/alert.sql":
+    psql -h localhost -U market_app -d market_db {{ files }}
+

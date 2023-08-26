@@ -1,6 +1,6 @@
-CREATE TABLE trading_alerts
+CREATE TABLE alerts
 (
-	trading_alert_id  Uuid,
+	alert_id  Uuid,
 	ticker			  Text NOT NULL,
 	timeframe		  Text NOT NULL,
 	exchange		  Text NOT NULL,
@@ -15,8 +15,8 @@ CREATE TABLE trading_alerts
   	created_at        Timestamptz NOT NULL,
   	modified_at       Timestamptz NOT NULL,
 
-  	PRIMARY KEY (trading_alert_id)
+  	PRIMARY KEY (alert_id)
 );
 
-CREATE INDEX idx_trading_alerts_ticker ON trading_alerts (ticker);
-CREATE INDEX idx_trading_alerts_alert_type ON trading_alerts (alert_type);
+CREATE INDEX idx_alerts_ticker ON alerts (ticker);
+CREATE INDEX idx_alerts_alert_type ON alerts (alert_type);
