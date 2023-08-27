@@ -17,8 +17,8 @@ use sqlx::{postgres::PgConnectOptions, Error as SqlxError, PgPool};
 use tower::ServiceBuilder;
 
 pub struct App {
-    db: PgPool,
-    config: AppConfig,
+    pub db: PgPool,
+    pub config: AppConfig,
 }
 
 pub async fn build_state(config: AppConfig) -> Result<App, SqlxError> {

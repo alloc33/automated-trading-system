@@ -4,7 +4,7 @@ use market::{build_routes, build_state, config::AppConfig};
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
     tracing_subscriber::fmt::init();
     let config = AppConfig::build();

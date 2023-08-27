@@ -5,7 +5,7 @@ default:
     just --list
 
 export RUST_LOG := env_var_or_default("RUST_LOG", "debug,sqlx=error")
-export DATABASE_URL := "postgres://market_app:C4aMnSTFp9T9bwqDPqV8uw==@localhost:5432/market_db"
+export DATABASE_URL := "postgres://market_app:@localhost:5432/market_db"
 
 # run development server
 runserver:
@@ -56,8 +56,8 @@ alias t := test
 
 # run all package tests (market by default)
 test test_name="" package="market":
-    cargo test -p {{ package }} --color always {{ test_name }} --
+    cargo test -p {{ package }} --color always {{ test_name }} -- --nocapture
 
-apply_fixtures files="-f market/tests/fixtures/alert.sql":
+apply_fixtures files="-f market/tests/fixtures/alerts.sql":
     psql -h localhost -U market_app -d market_db {{ files }}
 

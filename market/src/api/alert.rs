@@ -37,7 +37,7 @@ use crate::{objects::Price, App};
 // 	}
 // }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct NewTradingAlert {
     pub webhook_key: String,
     pub ticker: String,
@@ -74,12 +74,12 @@ pub enum AlertType {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BarData {
-    time: DateTime<Utc>,
-    open: Price,
-    high: Price,
-    low: Price,
-    close: Price,
-    volume: Decimal,
+    pub time: DateTime<Utc>,
+    pub open: Price,
+    pub high: Price,
+    pub low: Price,
+    pub close: Price,
+    pub volume: Decimal,
 }
 
 pub async fn process_alert(
