@@ -1,6 +1,8 @@
 pub mod api;
 pub mod config;
 pub mod middleware;
+pub mod strategy_manager;
+pub mod trade_executor;
 
 use std::{sync::Arc, time::Duration};
 
