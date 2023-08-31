@@ -1,4 +1,4 @@
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::WithRejection;
@@ -29,7 +29,7 @@ use crate::{objects::Price, App};
 // }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct NewTradingAlert {
+pub struct NewAlert {
     pub webhook_key: String,
     pub ticker: String,
     pub timeframe: String,
@@ -62,7 +62,7 @@ pub struct BarData {
 
 pub async fn receive_alert(
     State(app): State<Arc<App>>,
-    WithRejection(alert, _): WithRejection<Json<NewTradingAlert>, ApiError>,
+    WithRejection(alert, _): WithRejection<Json<NewAlert>, ApiError>,
 ) -> Response<()> {
     if !is_valid_webhook_key(&alert.webhook_key) {
         return Err(ApiError::Unauthorized(

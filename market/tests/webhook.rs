@@ -2,7 +2,7 @@ use axum::http::{self, Request};
 use http::method::Method;
 use hyper::Body;
 use market::{
-    api::webhook_receiver::{AlertType, BarData, NewTradingAlert},
+    api::webhook_receiver::{AlertType, BarData, NewAlert},
     objects::Price,
 };
 use pretty_assertions::assert_eq;
@@ -17,7 +17,7 @@ use setup::make_test_app;
 pub(crate) async fn create_alerts(pool: PgPool) {
     let app = make_test_app(pool).await;
 
-    let new_alert = NewTradingAlert {
+    let new_alert = NewAlert {
         webhook_key: "a773a6b1e4bf06be5c2983f705252eaeafc2c6e635a5a3beb2901a4cf40459a2".to_string(),
         ticker: "AAPL".to_string(),
         timeframe: "5m".to_string(),
