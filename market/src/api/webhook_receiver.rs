@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 use strum_macros::{AsRefStr, EnumString};
 
 use super::{error::ApiError, Response};
-use crate::{objects::Price, App};
+use crate::{price::Price, App};
 
 // NOTE: Webhook body example:
 // {

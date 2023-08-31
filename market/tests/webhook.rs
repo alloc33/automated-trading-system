@@ -1,9 +1,9 @@
 use axum::http::{self, Request};
 use http::method::Method;
 use hyper::Body;
-use market::{
-    api::webhook_receiver::{AlertType, BarData, NewAlert},
-    objects::Price,
+use market::api::{
+    price::Price,
+    webhook_receiver::{AlertType, BarData, NewAlert},
 };
 use pretty_assertions::assert_eq;
 use rust_decimal::Decimal;

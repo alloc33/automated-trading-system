@@ -1,8 +1,6 @@
 pub mod api;
 pub mod config;
 pub mod middleware;
-pub mod model;
-pub mod objects;
 
 use std::{sync::Arc, time::Duration};
 
