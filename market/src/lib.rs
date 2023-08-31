@@ -9,7 +9,7 @@ use std::{sync::Arc, time::Duration};
 use api::*;
 use axum::{
     middleware::{from_fn, from_fn_with_state},
-    routing::{get, post},
+    routing::post,
     Router,
 };
 use config::AppConfig;
@@ -46,8 +46,7 @@ pub async fn build_state(config: AppConfig) -> Result<App, SqlxError> {
 
 pub fn build_routes(app_state: Arc<App>) -> Router {
     Router::new()
-        .route("/alert", post(api::alert::process_alert))
-        .route("/alert", get(api::alert::get_alerts))
+        .route("/webhook/alert", post(api::webhook_receiver::receive_alert))
         .layer(
             ServiceBuilder::new()
                 .layer(from_fn_with_state(app_state.clone(), middleware::auth))

@@ -4,13 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+apca = { version = "0.27" }
 axum = { version = "0.6.16", features = ["tracing"] }
 axum-core = { version = "0.3.4" }
 axum-extra = { version = "0.7.5", features = ["cookie"] }
 chrono = { version = "0.4.24", features = ["serde"] }
 dotenvy = "0.15"
 hyper = "0.14"
+pretty_assertions = "1.4.0"
 rand_core = { version = "0.6.4", features = ["std"] }
+reqwest = { version = "0.11.18", features = ["rustls-tls", "json"], default-features = false }
 rust_decimal = { version = "1.25", features = ["serde-arbitrary-precision"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.95"
@@ -23,11 +26,9 @@ thiserror = "1"
 time = "0.3.20"
 tokio = { version = "1.27.0", features = ["full"] }
 tower = { version = "0.4", features = ["full"] }
-tower-layer = "0.3.2"
 tower-http = { version = "0.4", features = ["trace"] }
+tower-layer = "0.3.2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"]}
 uuid = { version = "1.3.0", features = ["serde", "v4"] }
 uuid7 = { version = "0.6", features = ["uuid", "serde"] }
-pretty_assertions = "1.4.0"
-reqwest = { version = "0.11.18", features = ["rustls-tls", "json"], default-features = false }
