@@ -1,5 +1,6 @@
 pub mod api;
 pub mod config;
+pub mod events;
 pub mod middleware;
 pub mod strategy_manager;
 pub mod trade_executor;
@@ -13,15 +14,18 @@ use axum::{
     Router,
 };
 use config::AppConfig;
+use events::Event;
 use sqlx::{postgres::PgConnectOptions, Error as SqlxError, PgPool};
+use tokio::sync::mpsc::UnboundedSender;
 use tower::ServiceBuilder;
 
 pub struct App {
     pub db: PgPool,
+    pub events_sender: UnboundedSender<Event>,
     pub config: AppConfig,
 }
 
-pub async fn build_state(config: AppConfig) -> Result<App, SqlxError> {
+pub async fn build_state(config: AppConfig, events_sender: UnboundedSender<Event>) -> Result<App, SqlxError> {
     let opts = config.database_url.parse::<PgConnectOptions>()?;
 
     let pool = sqlx::pool::PoolOptions::new()
@@ -40,7 +44,11 @@ pub async fn build_state(config: AppConfig) -> Result<App, SqlxError> {
         }
     }
 
-    let app = App { db: pool, config };
+    let app = App {
+        db: pool,
+        events_sender,
+        config,
+    };
     Ok(app)
 }
 
