@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 #[derive(Clone, Debug)]
 pub struct EventBus {
-    pub sender: UnboundedSender<Event>,
+    pub sender: Arc<Mutex<UnboundedSender<Event>>>,
     pub receiver: Arc<Mutex<UnboundedReceiver<Event>>>,
 }
 
@@ -16,13 +16,14 @@ pub struct EventBus {
 impl EventBus {
     pub fn new() -> Self {
         let (sender, receiver) = unbounded_channel::<Event>();
+        let sender = Arc::new(Mutex::new(sender));
         let receiver = Arc::new(Mutex::new(receiver));
 
         Self { sender, receiver }
     }
 
-    pub fn send(&self, event: Event) -> Result<(), SendError<Event>> {
-        self.sender.send(event)
+    pub async fn send(&self, event: Event) -> Result<(), SendError<Event>> {
+        self.sender.lock().await.send(event)
     }
 }
 
