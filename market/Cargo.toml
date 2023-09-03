@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1"
 apca = { version = "0.27" }
 axum = { version = "0.6.16", features = ["tracing"] }
 axum-core = { version = "0.3.4" }

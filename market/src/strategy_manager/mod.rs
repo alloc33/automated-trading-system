@@ -1,4 +1,5 @@
 pub mod macd_ema_v0;
+pub mod trade_error;
 
 use std::sync::Arc;
 
@@ -6,9 +7,14 @@ use tokio::sync::{
     mpsc::{UnboundedReceiver, UnboundedSender},
     Mutex,
 };
-use tracing::debug;
+use tracing::{debug, error};
 
-use crate::{events::Event, trade_executor::TradeExecutor};
+use crate::{
+    events::{Event, TradingSignal},
+    trade_executor::TradeExecutor,
+};
+
+use self::trade_error::TradeError;
 
 pub async fn run(
     event_receiver: Arc<Mutex<UnboundedReceiver<Event>>>,
@@ -34,9 +40,19 @@ async fn handle_event(
     trade_executor: Arc<TradeExecutor>,
 ) {
     match &event {
-        Event::NewAlert(alert) => {
-            debug!(alert = ?alert, "Received NewAlert event");
-            // TODO: process alert and retry if failed
+        Event::WebhookAlert(signal) => {
+            debug!(signal = ?signal, "Received WebhookAlert event");
+            if let Err(err) = process_trading_signal(signal, trade_executor).await {
+                error!(error = ?err, "Cannot process trading signal");
+                _ = sender.send(Event::WebhookAlert(TradingSignal::StopLoss))
+            }
         }
     }
+}
+
+async fn process_trading_signal(
+    signal: &TradingSignal,
+    trade_executor: Arc<TradeExecutor>,
+) -> Result<(), TradeError> {
+    Ok(())
 }
