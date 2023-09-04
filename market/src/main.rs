@@ -20,7 +20,7 @@ async fn main() {
     // Build apps config
     let config = AppConfig::build();
 
-    // Build app state
+    // Build event bus
     let event_bus = EventBus::new();
 
     // Build app state
@@ -32,10 +32,11 @@ async fn main() {
         })
         .into();
 
+    // Setup trading related components
     let trade_executor = TradeExecutor::new(Arc::clone(&state));
-
     let strategy_manager = Arc::new(StrategyManager::new(trade_executor));
 
+    // Start event dispatcher
     tokio::spawn(dispatch_events(event_bus.receiver, strategy_manager));
 
     // Start server
