@@ -4,7 +4,7 @@ use std::{
 };
 
 use market::{
-    build_routes, build_state, config::AppConfig, events::EventBus, strategy_manager,
+    build_routes, build_state, config::AppConfig, events::{EventBus, dispatch_events, trade_signal_handler::TradeSignalHandler}, strategy_manager,
     trade_executor::TradeExecutor,
 };
 
@@ -31,11 +31,15 @@ async fn main() {
     let trade_executor = TradeExecutor::new();
 
     // Run strategy manager
-    tokio::spawn(strategy_manager::run(
-        Arc::clone(&event_bus.receiver),
-        event_bus.sender,
-        trade_executor,
-    ));
+    // tokio::spawn(strategy_manager::run(
+    //     Arc::clone(&event_bus.receiver),
+    //     event_bus.sender,
+    //     trade_executor,
+    // ));
+
+    let trade_signal_handler = TradeSignalHandler::new(trade_executor);
+
+    tokio::spawn(dispatch_events(event_bus, trade_signal_handler));
 
     // Start server
     let app = build_routes(state.into());

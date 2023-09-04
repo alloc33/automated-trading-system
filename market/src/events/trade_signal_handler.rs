@@ -1,9 +1,17 @@
 use super::{EventHandler, HandleEventError, TradingSignal};
-use crate::{strategy_manager::trade_error::TradeError, trade_executor::TradeExecutor};
+use crate::trade_executor::TradeExecutor;
 
-struct TradingAlertHandler;
+pub struct TradeSignalHandler {
+    trade_executor: TradeExecutor,
+}
 
-impl EventHandler for TradingAlertHandler {
+impl TradeSignalHandler {
+    pub fn new(trade_executor: TradeExecutor) -> Self {
+        Self { trade_executor }
+    }
+}
+
+impl EventHandler for TradeSignalHandler {
     type EventPayload = TradingSignal;
 
     fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError> {

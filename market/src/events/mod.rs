@@ -1,4 +1,4 @@
-mod alert_handler;
+pub mod trade_signal_handler;
 
 use std::{fmt::Debug, sync::Arc};
 
@@ -44,13 +44,13 @@ impl EventBus {
 
 pub async fn dispatch_events(
     event_bus: Arc<EventBus>,
-    trading_alert_handler: Arc<dyn EventHandler<EventPayload = TradingSignal>>,
+    trade_signal_handler: Arc<dyn EventHandler<EventPayload = TradingSignal>>,
 ) {
     let mut receiver = event_bus.receiver.lock().await;
     while let Some(event) = receiver.recv().await {
         match &event {
             Event::WebhookAlert(signal) => {
-                if let Err(err) = trading_alert_handler.handle_event(signal) {
+                if let Err(err) = trade_signal_handler.handle_event(signal) {
                     error!(error = ?err, "Cannot process trading signal");
                     _ = event_bus.sender.send(event)
                 }
