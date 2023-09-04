@@ -11,7 +11,7 @@ use crate::strategy_manager::trade_error::TradeError;
 
 #[derive(Clone, Debug)]
 pub struct EventBus {
-    pub sender: Arc<UnboundedSender<Event>>,
+    pub sender: UnboundedSender<Event>,
     pub receiver: Arc<Mutex<UnboundedReceiver<Event>>>,
 }
 
@@ -31,7 +31,6 @@ pub trait EventHandler {
 impl EventBus {
     pub fn new() -> Self {
         let (sender, receiver) = unbounded_channel::<Event>();
-        let sender = Arc::new(sender);
         let receiver = Arc::new(Mutex::new(receiver));
 
         Self { sender, receiver }

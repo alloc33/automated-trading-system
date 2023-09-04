@@ -21,13 +21,13 @@ use tower::ServiceBuilder;
 
 pub struct App {
     pub db: PgPool,
-    pub event_sender: Arc<UnboundedSender<Event>>,
+    pub event_sender: UnboundedSender<Event>,
     pub config: AppConfig,
 }
 
 pub async fn build_state(
     config: AppConfig,
-    event_sender: Arc<UnboundedSender<Event>>,
+    event_sender: UnboundedSender<Event>,
 ) -> Result<App, SqlxError> {
     let opts = config.database_url.parse::<PgConnectOptions>()?;
 

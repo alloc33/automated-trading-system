@@ -24,7 +24,7 @@ async fn main() {
     let event_bus = EventBus::new();
 
     // Build app state
-    let state: Arc<App> = build_state(config, Arc::clone(&event_bus.sender))
+    let state: Arc<App> = build_state(config, event_bus.sender.clone())
         .await
         .unwrap_or_else(|err| {
             tracing::error!(error=%err, "Cannot connect to database");
