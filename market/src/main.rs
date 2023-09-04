@@ -6,9 +6,10 @@ use std::{
 use market::{
     build_routes, build_state,
     config::AppConfig,
-    events::{dispatch_events, trade_signal_handler::TradeSignalHandler, EventBus},
-    strategy_manager,
+    events::{dispatch_events, EventBus},
+    strategy_manager::StrategyManager,
     trade_executor::TradeExecutor,
+    App,
 };
 
 #[tokio::main]
@@ -23,21 +24,22 @@ async fn main() {
     let event_bus = EventBus::new();
 
     // Build app state
-    let state = build_state(config, Arc::clone(&event_bus.sender))
+    let state: Arc<App> = build_state(config, Arc::clone(&event_bus.sender))
         .await
         .unwrap_or_else(|err| {
             tracing::error!(error=%err, "Cannot connect to database");
             std::process::exit(1);
-        });
+        })
+        .into();
 
-    let trade_executor = TradeExecutor::new();
+    let trade_executor = TradeExecutor::new(Arc::clone(&state));
 
-    let trade_signal_handler = TradeSignalHandler::new(trade_executor);
+    let strategy_manager = Arc::new(StrategyManager::new(trade_executor));
 
-    tokio::spawn(dispatch_events(event_bus, trade_signal_handler));
+    tokio::spawn(dispatch_events(event_bus.receiver, strategy_manager));
 
     // Start server
-    let app = build_routes(state.into());
+    let app = build_routes(state);
     let addr = SocketAddr::from((Ipv4Addr::new(0, 0, 0, 0), 8000));
     tracing::info!("Listening on {}", addr);
     axum::Server::bind(&addr)

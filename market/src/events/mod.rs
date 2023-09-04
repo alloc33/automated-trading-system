@@ -1,13 +1,12 @@
-pub mod trade_signal_handler;
-
 use std::{fmt::Debug, sync::Arc};
 
+use async_trait::async_trait;
 use tokio::sync::{
     mpsc::{error::SendError, unbounded_channel, UnboundedReceiver, UnboundedSender},
     Mutex,
 };
-
 use tracing::error;
+
 use crate::strategy_manager::trade_error::TradeError;
 
 #[derive(Clone, Debug)]
@@ -21,10 +20,11 @@ pub enum HandleEventError {
     TradeError(TradeError),
 }
 
+#[async_trait]
 pub trait EventHandler {
     type EventPayload;
 
-    fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError>;
+    async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError>;
 }
 
 #[allow(clippy::new_without_default)]
@@ -43,27 +43,31 @@ impl EventBus {
 }
 
 pub async fn dispatch_events(
-    event_bus: Arc<EventBus>,
-    trade_signal_handler: Arc<dyn EventHandler<EventPayload = TradingSignal>>,
+    event_receiver: Arc<Mutex<UnboundedReceiver<Event>>>,
+    trade_signal_handler: Arc<dyn EventHandler<EventPayload = TradingSignal> + Send + Sync>,
 ) {
-    let mut receiver = event_bus.receiver.lock().await;
+    let mut receiver = event_receiver.lock().await;
     while let Some(event) = receiver.recv().await {
-        match &event {
+        match event.clone() {
             Event::WebhookAlert(signal) => {
-                if let Err(err) = trade_signal_handler.handle_event(signal) {
-                    error!(error = ?err, "Cannot process trading signal");
-                    _ = event_bus.sender.send(event)
-                }
+                let trade_signal_handler = Arc::clone(&trade_signal_handler);
+
+                tokio::spawn(async move {
+                    if let Err(err) = trade_signal_handler.handle_event(&signal).await {
+                        error!(error = ?err, "Cannot process trading signal");
+                    }
+                });
             }
         }
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum Event {
     WebhookAlert(TradingSignal), // TODO: add more events. ?manual trades
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TradingSignal {
     Long,
     Short,
