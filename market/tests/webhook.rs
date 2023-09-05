@@ -1,5 +1,4 @@
-use axum::http::{self, Request};
-use http::method::Method;
+use axum::http::{Request, method::Method};
 use hyper::Body;
 use market::api::{
     price::Price,
