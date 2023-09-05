@@ -1,11 +1,6 @@
 use axum::Router;
-use hyper::{
-    client::{Client, HttpConnector},
-    Body,
-};
-use market::{build_routes, config::AppConfig, App};
+use market::{build_routes, config::AppConfig, events::EventBus, App};
 use sqlx::PgPool;
-use tokio::net::TcpListener;
 
 pub async fn make_test_app(pool: PgPool) -> Router {
     std::env::set_var("WEBHOOK_KEY", "y2qRr/c9R3aPmeBSNRUbmp8HFevQ3bSlWi+TKLj5AhU");
@@ -17,5 +12,12 @@ pub async fn make_test_app(pool: PgPool) -> Router {
         trade_signal_max_retries: 3,
         trade_signal_retry_delay: 0.5,
     };
-    build_routes(std::sync::Arc::new(App { db: pool, config }))
+
+    let event_bus = EventBus::new();
+
+    build_routes(std::sync::Arc::new(App {
+        db: pool,
+        event_sender: event_bus.sender,
+        config,
+    }))
 }
