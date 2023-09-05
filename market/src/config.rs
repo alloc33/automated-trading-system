@@ -8,6 +8,18 @@ pub struct AppConfig {
     pub trade_signal_retry_delay: f64,
 }
 
+#[cfg(test)]
+impl Default for AppConfig {
+    fn default() -> Self {
+        AppConfig {
+            database_url: "postgres://market_app:@localhost:5432/market_db".to_string(),
+            api_key: "hcYXTtlU67hjLdQ5LWbG8FG6qP2GDdEiBj8Oh+NMijs=".to_string(),
+            trade_signal_max_retries: 3,
+            trade_signal_retry_delay: 0.5,
+        }
+    }
+}
+
 impl AppConfig {
     pub fn build() -> Self {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
