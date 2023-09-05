@@ -1,5 +1,7 @@
-use axum::http::{Request, method::Method};
-use hyper::Body;
+use axum::{
+    body::Body,
+    http::{method::Method, Request},
+};
 use market::api::{
     price::Price,
     webhook_receiver::{AlertType, BarData, NewAlert},
