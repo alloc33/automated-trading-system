@@ -2,12 +2,13 @@ use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, EnumString};
+use uuid::Uuid;
 
 use super::price::Price;
 
 // NOTE: Webhook body example:
 // {
-// 	"webhook_key": "d48ab5eec650c0351930f758e712d17f1cd829c603718c6ceb76869a3648be0b",
+// 	"strategy_id": "C6557FC3-0D9A-447A-9D87-E417D98F2114",
 // 	"time": "{{timenow}}",
 // 	"exchange": "{{exchange}}",
 // 	"ticker": "{{ticker}}",
@@ -24,7 +25,7 @@ use super::price::Price;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AlertData {
-    pub webhook_key: String,
+    pub strategy_id: Uuid,
     pub ticker: String,
     pub timeframe: String,
     pub exchange: String,

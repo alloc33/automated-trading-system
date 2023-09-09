@@ -2,18 +2,18 @@ use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::WithRejection;
-use sha2::{Digest, Sha256};
+use uuid::Uuid;
 
 use super::{error::ApiError, Response};
-use crate::{alert::AlertData, events::Event, App};
+use crate::{alert::AlertData, app_config::AppConfig, events::Event, App};
 
 pub async fn receive_alert(
     State(app): State<Arc<App>>,
     WithRejection(alert, _): WithRejection<Json<AlertData>, ApiError>,
 ) -> Response<()> {
-    if !is_valid_webhook_key(&alert.webhook_key) {
-        return Err(ApiError::Unauthorized(
-            "Webhook key is not correct or doesn't exist".to_string(),
+    if !is_valid_strategy(&app.config, &alert.strategy_id) {
+        return Err(ApiError::NotFound(
+            "Strategy is not recognised".to_string(),
         ));
     }
 
@@ -61,8 +61,9 @@ pub async fn receive_alert(
     Ok((StatusCode::OK, Json::default()))
 }
 
-fn is_valid_webhook_key(webhook_key: &str) -> bool {
-    let env_webhook_key = std::env::var("WEBHOOK_KEY").unwrap_or_default();
-    let hash = format!("{:x}", Sha256::digest(env_webhook_key.as_bytes()));
-    hash == webhook_key
+fn is_valid_strategy(config: &AppConfig, strategy_id: &Uuid) -> bool {
+    config
+        .strategies
+        .iter()
+        .any(|strategy| &strategy.id == strategy_id)
 }
