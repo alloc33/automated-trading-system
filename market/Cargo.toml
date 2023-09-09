@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 apca = { version = "0.27" }
 axum = { version = "0.6.16", features = ["tracing"] }
-axum-core = { version = "0.3.4" }
 axum-extra = { version = "0.7.5", features = ["cookie"] }
 chrono = { version = "0.4.24", features = ["serde"] }
 dotenvy = "0.15"
