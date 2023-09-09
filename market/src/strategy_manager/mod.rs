@@ -1,8 +1,6 @@
 pub mod macd_ema_v0;
 pub mod trade_error;
 
-use async_trait::async_trait;
-
 use crate::{
     events::{EventHandler, HandleEventError, TradingSignal},
     trade_executor::TradeExecutor,
@@ -19,7 +17,7 @@ impl StrategyManager {
 }
 
 // TODO: Retry signal with trade executor
-#[async_trait]
+#[axum::async_trait]
 impl EventHandler for StrategyManager {
     type EventPayload = TradingSignal;
 

@@ -1,6 +1,5 @@
 use std::{fmt::Debug, sync::Arc};
 
-use async_trait::async_trait;
 use tokio::sync::{
     mpsc::{error::SendError, unbounded_channel, UnboundedReceiver, UnboundedSender},
     Mutex,
@@ -20,7 +19,7 @@ pub enum HandleEventError {
     TradeError(TradeError),
 }
 
-#[async_trait]
+#[axum::async_trait]
 pub trait EventHandler {
     type EventPayload;
 
