@@ -33,6 +33,10 @@ impl StrategyManager {
             .iter()
             .find(|strategy| strategy.id == strategy_id)
     }
+
+    fn create_order(&self, input: &AlertData) -> Order {
+        todo!()
+    }
 }
 
 #[axum::async_trait]
@@ -41,10 +45,10 @@ impl EventHandler for StrategyManager {
 
     async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError> {
         if let Some(strategy) = self.find_strategy(event.strategy_id) {
-            // self.trade_executor
-            // .execute_trade(event, strategy.broker)
-            // .await
-            // .map_err(HandleEventError::TradeError)
+            let order = self.create_order(event);
+            let result = self.trade_executor.execute_trade(&order).await;
+
+
             Ok(())
         } else {
             Err(HandleEventError::UnknownStrategy(event.strategy_id.to_string()))

@@ -20,6 +20,7 @@ pub struct Strategy {
     pub id: Uuid,
     pub name: String,
     pub enabled: bool,
+    pub broker: Broker,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -27,6 +28,13 @@ pub struct AppConfig {
     pub database: Database,
     pub common: Common,
     pub strategies: Vec<Strategy>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Broker {
+    Alpaca,
+    // TODO: ?add more brokers
 }
 
 impl AppConfig {

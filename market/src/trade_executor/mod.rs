@@ -4,16 +4,12 @@ use uuid::Uuid;
 
 use crate::{
     api::alert::AlertData,
-    strategy_manager::{trade_error::TradeError},
+    strategy_manager::{trade_error::TradeError, Order},
     App,
 };
 
 pub mod alpaca_client;
 pub mod order;
-
-pub enum Broker {
-    Alpaca,
-}
 
 pub trait TradeManager {
     fn get_account(&self) -> Result<(), ()>;
@@ -30,10 +26,7 @@ impl TradeExecutor {
     //     Self { app }
     // }
 
-    pub async fn execute_trade<T>(
-        &self,
-        broker: Broker,
-    ) -> Result<(), TradeError> {
+    pub async fn execute_trade(&self, order: &Order) -> Result<(), TradeError> {
         // let account = self.get_account();
         // let order = self.create_order(input);
 
