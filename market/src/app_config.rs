@@ -16,15 +16,17 @@ pub struct Common {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct Strategies {
-    pub macd_ema_id: Uuid,
+pub struct Strategy {
+    pub id: Uuid,
+    pub name: String,
+    pub is_active: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppConfig {
     pub database: Database,
     pub common: Common,
-    pub strategies: Strategies,
+    pub strategies: Vec<Strategy>,
 }
 
 impl AppConfig {
