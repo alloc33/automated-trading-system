@@ -8,6 +8,7 @@ apca = { version = "0.27" }
 axum = { version = "0.6.16", features = ["tracing"] }
 axum-extra = { version = "0.7.5", features = ["cookie"] }
 chrono = { version = "0.4.24", features = ["serde"] }
+config = { version = "0.13" }
 dotenvy = "0.15"
 hyper = "0.14"
 rand_core = { version = "0.6.4", features = ["std"] }

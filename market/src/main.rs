@@ -1,11 +1,12 @@
 use std::{
+    error::Error,
     net::{Ipv4Addr, SocketAddr},
     sync::Arc,
 };
 
 use market::{
+    app_config::AppConfig,
     build_routes, build_state,
-    config::Config,
     events::{dispatch_events, EventBus},
     strategy_manager::StrategyManager,
     trade_executor::TradeExecutor,
@@ -13,27 +14,22 @@ use market::{
 };
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn Error>> {
     dotenvy::dotenv().ok();
     tracing_subscriber::fmt::init();
 
     // Build apps config
-    let config = Config::build();
+    let config = AppConfig::build()?;
 
     // Build event bus
     let events = EventBus::new();
 
     // Build app state
-    let state: Arc<App> = build_state(config, events.sender.clone())
-        .await
-        .unwrap_or_else(|err| {
-            tracing::error!(error=%err, "Cannot connect to database");
-            std::process::exit(1);
-        })
-        .into();
+    let state: Arc<App> = build_state(config, events.sender.clone()).await?.into();
 
     // Setup trading related components
     let trade_executor = TradeExecutor::new(Arc::clone(&state));
+
     let strategy_manager = Arc::new(StrategyManager::new(trade_executor));
 
     // Start event dispatcher
@@ -45,6 +41,7 @@ async fn main() {
     tracing::info!("Listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }

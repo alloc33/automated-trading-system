@@ -3,10 +3,9 @@ use std::sync::Arc;
 use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::WithRejection;
 use sha2::{Digest, Sha256};
-use crate::{alert::AlertData, events::Event};
 
 use super::{error::ApiError, Response};
-use crate::App;
+use crate::{alert::AlertData, events::Event, App};
 
 pub async fn receive_alert(
     State(app): State<Arc<App>>,

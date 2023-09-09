@@ -1,13 +1,13 @@
 use std::{fmt::Debug, sync::Arc};
 
+use thiserror::Error as ThisError;
 use tokio::sync::{
     mpsc::{error::SendError, unbounded_channel, UnboundedReceiver, UnboundedSender},
     Mutex,
 };
 use tracing::error;
 
-use crate::{strategy_manager::trade_error::TradeError, api::alert::AlertData};
-use thiserror::Error as ThisError;
+use crate::{api::alert::AlertData, strategy_manager::trade_error::TradeError};
 
 #[derive(Clone, Debug)]
 pub struct EventBus {
@@ -20,7 +20,7 @@ pub enum HandleEventError {
     #[error("Trade error - {0}")]
     TradeError(TradeError),
     #[error("Unknown exchange - {0}")]
-    UnknownExchange(String)
+    UnknownExchange(String),
 }
 
 #[axum::async_trait]

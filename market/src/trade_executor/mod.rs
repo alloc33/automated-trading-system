@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
-use crate::{App, api::alert::AlertData, strategy_manager::trade_error::TradeError};
 use uuid::Uuid;
 
-pub mod order;
+use crate::{api::alert::AlertData, strategy_manager::trade_error::TradeError, App};
+
 pub mod alpaca_client;
+pub mod order;
 
 pub enum Broker {
     Alpaca,
@@ -15,7 +16,7 @@ pub trait TradeManager {
 }
 
 pub struct Account {
-    id: Uuid
+    id: Uuid,
 }
 
 // pub struct TradeInput {

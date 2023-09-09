@@ -24,7 +24,7 @@ pub async fn auth<B>(
     }
 
     if let Some(auth_value) = req.headers().get(header::AUTHORIZATION) {
-        if let Ok(header) = header::HeaderValue::from_str(&app.config.api_key) {
+        if let Ok(header) = header::HeaderValue::from_str(&app.config.common.api_key) {
             if auth_value == header {
                 return Ok(next.run(req).await);
             }

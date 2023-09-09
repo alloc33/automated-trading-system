@@ -1,4 +1,5 @@
 use apca;
+
 use super::TradeManager;
 
 pub struct AlpacaClient {

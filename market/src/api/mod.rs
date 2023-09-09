@@ -1,8 +1,8 @@
+pub mod alert;
 pub mod error;
 pub mod pagination;
 pub mod price;
 pub mod webhook_receiver;
-pub mod alert;
 
 use axum::{http::StatusCode, Json};
 

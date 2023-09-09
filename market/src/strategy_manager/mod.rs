@@ -2,8 +2,9 @@ pub mod macd_ema_v0;
 pub mod trade_error;
 
 use crate::{
+    api::alert::AlertData,
     events::{EventHandler, HandleEventError},
-    trade_executor::{TradeExecutor, Broker}, api::alert::AlertData
+    trade_executor::{Broker, TradeExecutor},
 };
 
 pub struct StrategyManager {
@@ -22,14 +23,13 @@ impl EventHandler for StrategyManager {
 
     async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError> {
         match event.exchange.as_str() {
-            "BATS" | "NYSE" | "NASDAQ" => {
-                self.trade_executor
-                    .execute_trade(event, Broker::Alpaca)
-                    .await
-                    .map_err(HandleEventError::TradeError)
-            }
+            "BATS" | "NYSE" | "NASDAQ" => self
+                .trade_executor
+                .execute_trade(event, Broker::Alpaca)
+                .await
+                .map_err(HandleEventError::TradeError),
 
-            _ => Err(HandleEventError::UnknownExchange("".to_string()))
+            _ => Err(HandleEventError::UnknownExchange("".to_string())),
         }
     }
 }
