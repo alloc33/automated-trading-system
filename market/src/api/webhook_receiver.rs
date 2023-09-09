@@ -2,35 +2,15 @@ use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::WithRejection;
-use uuid::Uuid;
 
 use super::{error::ApiError, Response};
-use crate::{
-    alert::AlertData,
-    app_config::{AppConfig, Strategy},
-    events::Event,
-    strategy_manager::TradeSignal,
-    App,
-};
+use crate::{alert::AlertData, events::Event, App};
 
-/// Receive alert and pass it to the strategy manager through the event bus.
-/// If strategy is disabled - persist alert and do nothing.
 pub async fn receive_alert(
     State(app): State<Arc<App>>,
     WithRejection(alert, _): WithRejection<Json<AlertData>, ApiError>,
 ) -> Response<()> {
-    if let Some(strategy) = find_strategy(&app.config, &alert.strategy_id) {
-        if strategy.enabled {
-            // TODO: Add more fields to TradeSignal
-            _ = app.event_sender.send(Event::WebhookAlert(TradeSignal::new(
-                strategy.clone(),
-                alert.exchange.clone(),
-            )));
-        }
-    } else {
-        tracing::error!("Strategy not found");
-        return Ok((StatusCode::NOT_FOUND, Json::default()));
-    }
+    _ = app.event_sender.send(Event::WebhookAlert(alert.0.clone()));
 
     _ = sqlx::query!(
         r#"
@@ -71,11 +51,4 @@ pub async fn receive_alert(
     .await?;
 
     Ok((StatusCode::OK, Json::default()))
-}
-
-fn find_strategy<'a>(config: &'a AppConfig, strategy_id: &'a Uuid) -> Option<&'a Strategy> {
-    config
-        .strategies
-        .iter()
-        .find(|strategy| &strategy.id == strategy_id)
 }

@@ -28,10 +28,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let state: Arc<App> = build_state(config, events.sender.clone()).await?.into();
 
     // Setup trading related components
-    let trade_executor = TradeExecutor::new(Arc::clone(&state));
+    let trade_executor = TradeExecutor;
 
     let strategy_manager = Arc::new(StrategyManager::new(
-        state.config.strategies.clone(),
+        Arc::clone(&state),
         trade_executor,
     ));
 

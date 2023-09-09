@@ -9,7 +9,7 @@ use tracing::error;
 
 use crate::{
     api::alert::AlertData,
-    strategy_manager::{trade_error::TradeError, TradeSignal},
+    strategy_manager::trade_error::TradeError,
 };
 
 #[derive(Clone, Debug)]
@@ -20,10 +20,12 @@ pub struct EventBus {
 
 #[derive(Debug, ThisError)]
 pub enum HandleEventError {
-    #[error("Trade error - {0}")]
-    TradeError(TradeError),
+    #[error(transparent)]
+    TradeError(#[from] TradeError),
     #[error("Unknown exchange - {0}")]
     UnknownExchange(String),
+    #[error("Unknown strategy - {0}")]
+    UnknownStrategy(String),
 }
 
 #[axum::async_trait]
@@ -50,16 +52,16 @@ impl EventBus {
 /// Receive alert and pass it to the strategy manager through the event bus.
 pub async fn dispatch_events(
     event_receiver: Arc<Mutex<UnboundedReceiver<Event>>>,
-    trade_signal_handler: Arc<dyn EventHandler<EventPayload = TradeSignal> + Send + Sync>,
+    trade_signal_handler: Arc<dyn EventHandler<EventPayload = AlertData> + Send + Sync>,
 ) {
     let mut receiver = event_receiver.lock().await;
     while let Some(event) = receiver.recv().await {
         match event.clone() {
-            Event::WebhookAlert(signal) => {
+            Event::WebhookAlert(alert_data) => {
                 let trade_signal_handler = Arc::clone(&trade_signal_handler);
 
                 tokio::spawn(async move {
-                    if let Err(err) = trade_signal_handler.handle_event(&signal).await {
+                    if let Err(err) = trade_signal_handler.handle_event(&alert_data).await {
                         error!(error = ?err, "Cannot process trading signal");
                     }
                 });
@@ -70,5 +72,5 @@ pub async fn dispatch_events(
 
 #[derive(Debug, Clone)]
 pub enum Event {
-    WebhookAlert(TradeSignal), // TODO: add more events. ?manual trades
+    WebhookAlert(AlertData), // TODO: add more events. ?manual trades
 }

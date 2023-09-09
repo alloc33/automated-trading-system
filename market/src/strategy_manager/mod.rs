@@ -1,53 +1,62 @@
 pub mod trade_error;
 
+use std::sync::Arc;
+
+use uuid::Uuid;
 use crate::{
+    api::alert::AlertData,
     app_config::Strategy,
     events::{EventHandler, HandleEventError},
-    trade_executor::{Broker, TradeExecutor},
+    trade_executor::TradeExecutor,
+    App,
 };
 
-/// Represents a trade signal received from the webhook.
-pub struct TradeSignal {
-    pub strategy: Strategy,
-    pub exchange: String,
-    // TODO: Add more fields
-}
-
-impl TradeSignal {
-    pub fn new(strategy: Strategy, exchange: String) -> Self {
-        Self {
-            strategy,
-            exchange,
-        }
-    }
-}
-
 pub struct StrategyManager {
+    app_state: Arc<App>,
     trade_executor: TradeExecutor,
 }
 
+pub struct Order {}
+
 impl StrategyManager {
-    pub fn new(trade_executor: TradeExecutor) -> Self {
+    pub fn new(app_state: Arc<App>, trade_executor: TradeExecutor) -> Self {
         Self {
+            app_state,
             trade_executor,
         }
+    }
+
+    fn find_strategy(&self, strategy_id: Uuid) -> Option<&Strategy> {
+        self.app_state
+            .config
+            .strategies
+            .iter()
+            .find(|strategy| strategy.id == strategy_id)
     }
 }
 
 #[axum::async_trait]
 impl EventHandler for StrategyManager {
-    type EventPayload = TradeSignal;
+    type EventPayload = AlertData;
 
     async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError> {
-        match event.exchange.as_str() {
-            "BATS" | "NYSE" | "NASDAQ" => self
-                .trade_executor
-                .execute_trade(event, Broker::Alpaca)
-                .await
-                .map_err(HandleEventError::TradeError),
-
-            _ => Err(HandleEventError::UnknownExchange("".to_string())),
+        if let Some(strategy) = self.find_strategy(event.strategy_id) {
+            // self.trade_executor
+            // .execute_trade(event, strategy.broker)
+            // .await
+            // .map_err(HandleEventError::TradeError)
+            Ok(())
+        } else {
+            Err(HandleEventError::UnknownStrategy(event.strategy_id.to_string()))
         }
-        Ok(())
+        // match event.exchange.as_str() {
+        //     "BATS" | "NYSE" | "NASDAQ" => self
+        //         .trade_executor
+        //         .execute_trade(event, Broker::Alpaca)
+        //         .await
+        //         .map_err(HandleEventError::TradeError),
+
+        //     _ => Err(HandleEventError::UnknownExchange("".to_string())),
+        // };
     }
 }
