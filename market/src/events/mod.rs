@@ -7,7 +7,10 @@ use tokio::sync::{
 };
 use tracing::error;
 
-use crate::{api::alert::AlertData, strategy_manager::trade_error::TradeError};
+use crate::{
+    api::alert::AlertData,
+    strategy_manager::{trade_error::TradeError, TradeSignal},
+};
 
 #[derive(Clone, Debug)]
 pub struct EventBus {
@@ -44,9 +47,10 @@ impl EventBus {
     }
 }
 
+/// Receive alert and pass it to the strategy manager through the event bus.
 pub async fn dispatch_events(
     event_receiver: Arc<Mutex<UnboundedReceiver<Event>>>,
-    trade_signal_handler: Arc<dyn EventHandler<EventPayload = AlertData> + Send + Sync>,
+    trade_signal_handler: Arc<dyn EventHandler<EventPayload = TradeSignal> + Send + Sync>,
 ) {
     let mut receiver = event_receiver.lock().await;
     while let Some(event) = receiver.recv().await {
@@ -66,5 +70,5 @@ pub async fn dispatch_events(
 
 #[derive(Debug, Clone)]
 pub enum Event {
-    WebhookAlert(AlertData), // TODO: add more events. ?manual trades
+    WebhookAlert(TradeSignal), // TODO: add more events. ?manual trades
 }

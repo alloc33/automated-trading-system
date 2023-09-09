@@ -11,6 +11,10 @@ pub enum Broker {
     Alpaca,
 }
 
+pub struct Order {
+    pub id: Uuid,
+}
+
 pub trait TradeManager {
     fn get_account(&self) -> Result<(), ()>;
 }
@@ -18,18 +22,6 @@ pub trait TradeManager {
 pub struct Account {
     id: Uuid,
 }
-
-// pub struct TradeInput {
-//     pub ticker: String
-// }
-
-// impl From<AlertData> for TradeInput {
-//     fn from(value: AlertData) -> Self {
-//         Self {
-//             ticker: value.ticker
-//         }
-//     }
-// }
 
 pub struct TradeExecutor {
     pub app: Arc<App>,

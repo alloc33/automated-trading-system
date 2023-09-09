@@ -19,7 +19,7 @@ pub struct Common {
 pub struct Strategy {
     pub id: Uuid,
     pub name: String,
-    pub is_active: bool,
+    pub enabled: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -37,4 +37,8 @@ impl AppConfig {
 
         config.try_deserialize()
     }
+}
+
+pub trait StrategySelector {
+    fn select(&self, id: Uuid) -> Strategy;
 }

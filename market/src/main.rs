@@ -30,7 +30,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Setup trading related components
     let trade_executor = TradeExecutor::new(Arc::clone(&state));
 
-    let strategy_manager = Arc::new(StrategyManager::new(trade_executor));
+    let strategy_manager = Arc::new(StrategyManager::new(
+        state.config.strategies.clone(),
+        trade_executor,
+    ));
 
     // Start event dispatcher
     tokio::spawn(dispatch_events(events.receiver, strategy_manager));

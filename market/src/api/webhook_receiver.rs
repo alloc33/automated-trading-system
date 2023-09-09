@@ -5,20 +5,32 @@ use axum_extra::extract::WithRejection;
 use uuid::Uuid;
 
 use super::{error::ApiError, Response};
-use crate::{alert::AlertData, app_config::AppConfig, events::Event, App};
+use crate::{
+    alert::AlertData,
+    app_config::{AppConfig, Strategy},
+    events::Event,
+    strategy_manager::TradeSignal,
+    App,
+};
 
+/// Receive alert and pass it to the strategy manager through the event bus.
+/// If strategy is disabled - persist alert and do nothing.
 pub async fn receive_alert(
     State(app): State<Arc<App>>,
     WithRejection(alert, _): WithRejection<Json<AlertData>, ApiError>,
 ) -> Response<()> {
-    if !is_valid_strategy(&app.config, &alert.strategy_id) {
-        return Err(ApiError::NotFound(
-            "Strategy is not recognised".to_string(),
-        ));
+    if let Some(strategy) = find_strategy(&app.config, &alert.strategy_id) {
+        if strategy.enabled {
+            // TODO: Add more fields to TradeSignal
+            _ = app.event_sender.send(Event::WebhookAlert(TradeSignal::new(
+                strategy.clone(),
+                alert.exchange.clone(),
+            )));
+        }
+    } else {
+        tracing::error!("Strategy not found");
+        return Ok((StatusCode::NOT_FOUND, Json::default()));
     }
-
-    // NOTE: Send alert to event bus before saving to db
-    _ = app.event_sender.send(Event::WebhookAlert(alert.0.clone()));
 
     _ = sqlx::query!(
         r#"
@@ -61,9 +73,9 @@ pub async fn receive_alert(
     Ok((StatusCode::OK, Json::default()))
 }
 
-fn is_valid_strategy(config: &AppConfig, strategy_id: &Uuid) -> bool {
+fn find_strategy<'a>(config: &'a AppConfig, strategy_id: &'a Uuid) -> Option<&'a Strategy> {
     config
         .strategies
         .iter()
-        .any(|strategy| &strategy.id == strategy_id)
+        .find(|strategy| &strategy.id == strategy_id)
 }
