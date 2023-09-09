@@ -13,7 +13,7 @@ use axum::{
     routing::post,
     Router,
 };
-use config::AppConfig;
+use config::Config;
 use events::Event;
 use sqlx::{postgres::PgConnectOptions, Error as SqlxError, PgPool};
 use tokio::sync::mpsc::UnboundedSender;
@@ -22,11 +22,11 @@ use tower::ServiceBuilder;
 pub struct App {
     pub db: PgPool,
     pub event_sender: UnboundedSender<Event>,
-    pub config: AppConfig,
+    pub config: Config,
 }
 
 pub async fn build_state(
-    config: AppConfig,
+    config: Config,
     event_sender: UnboundedSender<Event>,
 ) -> Result<App, SqlxError> {
     let opts = config.database_url.parse::<PgConnectOptions>()?;

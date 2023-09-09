@@ -2,73 +2,24 @@ use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::WithRejection;
-use chrono::{DateTime, Utc};
-use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use strum_macros::{AsRefStr, EnumString};
+use crate::{alert::AlertData, events::Event};
 
 use super::{error::ApiError, Response};
-use crate::{price::Price, App};
-
-// NOTE: Webhook body example:
-// {
-// 	"webhook_key": "d48ab5eec650c0351930f758e712d17f1cd829c603718c6ceb76869a3648be0b",
-// 	"time": "{{timenow}}",
-// 	"exchange": "{{exchange}}",
-// 	"ticker": "{{ticker}}",
-// 	"type": "unknown",
-// 	"bar": {
-// 		"time": "{{time}}",
-// 		"open": "{{open}}",
-// 		"high": "{{high}}",
-// 		"low": "{{low}}",
-// 		"close": "{{close}}",
-// 		"volume": "{{volume}}"
-// 	}
-// }
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct NewAlert {
-    pub webhook_key: String,
-    pub ticker: String,
-    pub timeframe: String,
-    pub exchange: String,
-    #[serde(rename = "type")]
-    pub alert_type: AlertType,
-    pub bar: BarData,
-    pub time: DateTime<Utc>,
-}
-
-#[derive(Debug, Deserialize, Serialize, EnumString, AsRefStr)]
-#[strum(serialize_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum AlertType {
-    Long,
-    Short,
-    StopLoss,
-    Unknown,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct BarData {
-    pub time: DateTime<Utc>,
-    pub open: Price,
-    pub high: Price,
-    pub low: Price,
-    pub close: Price,
-    pub volume: Decimal,
-}
+use crate::App;
 
 pub async fn receive_alert(
     State(app): State<Arc<App>>,
-    WithRejection(alert, _): WithRejection<Json<NewAlert>, ApiError>,
+    WithRejection(alert, _): WithRejection<Json<AlertData>, ApiError>,
 ) -> Response<()> {
     if !is_valid_webhook_key(&alert.webhook_key) {
         return Err(ApiError::Unauthorized(
             "Webhook key is not correct or doesn't exist".to_string(),
         ));
     }
+
+    // NOTE: Send alert to event bus before saving to db
+    _ = app.event_sender.send(Event::WebhookAlert(alert.0.clone()));
 
     _ = sqlx::query!(
         r#"
@@ -108,7 +59,7 @@ pub async fn receive_alert(
     .execute(&app.db)
     .await?;
 
-    Ok((StatusCode::CREATED, Json::default()))
+    Ok((StatusCode::OK, Json::default()))
 }
 
 fn is_valid_webhook_key(webhook_key: &str) -> bool {

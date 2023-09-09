@@ -6,7 +6,8 @@ use tokio::sync::{
 };
 use tracing::error;
 
-use crate::strategy_manager::trade_error::TradeError;
+use crate::{strategy_manager::trade_error::TradeError, api::alert::AlertData};
+use thiserror::Error as ThisError;
 
 #[derive(Clone, Debug)]
 pub struct EventBus {
@@ -14,9 +15,12 @@ pub struct EventBus {
     pub receiver: Arc<Mutex<UnboundedReceiver<Event>>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, ThisError)]
 pub enum HandleEventError {
+    #[error("Trade error - {0}")]
     TradeError(TradeError),
+    #[error("Unknown exchange - {0}")]
+    UnknownExchange(String)
 }
 
 #[axum::async_trait]
@@ -42,7 +46,7 @@ impl EventBus {
 
 pub async fn dispatch_events(
     event_receiver: Arc<Mutex<UnboundedReceiver<Event>>>,
-    trade_signal_handler: Arc<dyn EventHandler<EventPayload = TradingSignal> + Send + Sync>,
+    trade_signal_handler: Arc<dyn EventHandler<EventPayload = AlertData> + Send + Sync>,
 ) {
     let mut receiver = event_receiver.lock().await;
     while let Some(event) = receiver.recv().await {
@@ -62,13 +66,5 @@ pub async fn dispatch_events(
 
 #[derive(Debug, Clone)]
 pub enum Event {
-    WebhookAlert(TradingSignal), // TODO: add more events. ?manual trades
-}
-
-#[derive(Debug, Clone)]
-pub enum TradingSignal {
-    Long,
-    Short,
-    StopLoss,
-    TakeProfit,
+    WebhookAlert(AlertData), // TODO: add more events. ?manual trades
 }

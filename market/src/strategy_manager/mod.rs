@@ -2,8 +2,8 @@ pub mod macd_ema_v0;
 pub mod trade_error;
 
 use crate::{
-    events::{EventHandler, HandleEventError, TradingSignal},
-    trade_executor::TradeExecutor,
+    events::{EventHandler, HandleEventError},
+    trade_executor::{TradeExecutor, Broker}, api::alert::AlertData
 };
 
 pub struct StrategyManager {
@@ -16,29 +16,20 @@ impl StrategyManager {
     }
 }
 
-// TODO: Retry signal with trade executor
 #[axum::async_trait]
 impl EventHandler for StrategyManager {
-    type EventPayload = TradingSignal;
+    type EventPayload = AlertData;
 
     async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError> {
-        match event {
-            TradingSignal::Long => {
-                // Handle the Long signal event here
-                Ok(())
+        match event.exchange.as_str() {
+            "BATS" | "NYSE" | "NASDAQ" => {
+                self.trade_executor
+                    .execute_trade(event, Broker::Alpaca)
+                    .await
+                    .map_err(HandleEventError::TradeError)
             }
-            TradingSignal::Short => {
-                // Handle the Short signal event here
-                Ok(())
-            }
-            TradingSignal::StopLoss => {
-                // Handle the StopLoss signal event here
-                Ok(())
-            }
-            TradingSignal::TakeProfit => {
-                // Handle the TakeProfit signal event here
-                Ok(())
-            }
+
+            _ => Err(HandleEventError::UnknownExchange("".to_string()))
         }
     }
 }

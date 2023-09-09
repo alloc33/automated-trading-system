@@ -5,7 +5,7 @@ use std::{
 
 use market::{
     build_routes, build_state,
-    config::AppConfig,
+    config::Config,
     events::{dispatch_events, EventBus},
     strategy_manager::StrategyManager,
     trade_executor::TradeExecutor,
@@ -15,10 +15,10 @@ use market::{
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
-
     tracing_subscriber::fmt::init();
+
     // Build apps config
-    let config = AppConfig::build();
+    let config = Config::build();
 
     // Build event bus
     let events = EventBus::new();

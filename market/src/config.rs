@@ -1,14 +1,14 @@
 use std::env;
 
 #[derive(Debug, Clone)]
-pub struct AppConfig {
+pub struct Config {
     pub database_url: String,
     pub api_key: String,
     pub trade_signal_max_retries: u8,
     pub trade_signal_retry_delay: f64,
 }
 
-impl AppConfig {
+impl Config {
     pub fn build() -> Self {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         let api_key = env::var("API_KEY").expect("DATABASE_URL must be set");
@@ -21,7 +21,7 @@ impl AppConfig {
             .parse::<f64>()
             .expect("TRADE_SIGNAL_RETRY_DELAY must be a number");
 
-        AppConfig {
+        Config {
             database_url,
             api_key,
             trade_signal_max_retries,
