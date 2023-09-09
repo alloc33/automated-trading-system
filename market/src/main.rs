@@ -21,10 +21,10 @@ async fn main() {
     let config = AppConfig::build();
 
     // Build event bus
-    let event_bus = EventBus::new();
+    let events = EventBus::new();
 
     // Build app state
-    let state: Arc<App> = build_state(config, event_bus.sender.clone())
+    let state: Arc<App> = build_state(config, events.sender.clone())
         .await
         .unwrap_or_else(|err| {
             tracing::error!(error=%err, "Cannot connect to database");
@@ -37,7 +37,7 @@ async fn main() {
     let strategy_manager = Arc::new(StrategyManager::new(trade_executor));
 
     // Start event dispatcher
-    tokio::spawn(dispatch_events(event_bus.receiver, strategy_manager));
+    tokio::spawn(dispatch_events(events.receiver, strategy_manager));
 
     // Start server
     let app = build_routes(state);
