@@ -28,7 +28,7 @@ impl TradeExecutor {
     //     Self { app }
     // }
 
-    pub async fn execute_trade(&self, order: &Order) -> TradeExecutorResult {
+    pub async fn execute_order(&self, order: &Order) -> TradeExecutorResult {
         // let account = self.get_account();
         // let order = self.create_order(input);
 

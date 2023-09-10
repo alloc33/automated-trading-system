@@ -62,7 +62,7 @@ impl EventHandler for StrategyManager {
             let mut retries = 0;
 
             loop {
-                let trade_result = self.trade_executor.execute_trade(&order).await;
+                let trade_result = self.trade_executor.execute_order(&order).await;
 
                 if trade_result.is_ok() {
                     info!("Trade successfully executed");
