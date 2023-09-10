@@ -1,5 +1,4 @@
 use config::{Config, ConfigError, File};
-use rust_decimal::Decimal;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -9,24 +8,19 @@ pub struct Database {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct Common {
-    pub api_key: String,
-    pub trade_signal_max_retries: u8,
-    pub trade_signal_retry_delay: Decimal,
-}
-
-#[derive(Debug, Deserialize, Clone)]
 pub struct Strategy {
     pub id: Uuid,
     pub name: String,
     pub enabled: bool,
     pub broker: Broker,
+    pub max_event_retries: u8,
+    pub event_retry_delay: f64,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppConfig {
+    pub api_key: String,
     pub database: Database,
-    pub common: Common,
     pub strategies: Vec<Strategy>,
 }
 

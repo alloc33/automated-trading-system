@@ -7,10 +7,7 @@ use tokio::sync::{
 };
 use tracing::error;
 
-use crate::{
-    api::alert::AlertData,
-    strategy_manager::trade_error::TradeError,
-};
+use crate::{api::alert::AlertData, strategy_manager::trade_error::TradeError};
 
 #[derive(Clone, Debug)]
 pub struct EventBus {

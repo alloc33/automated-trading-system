@@ -21,15 +21,17 @@ pub struct Account {
 
 pub struct TradeExecutor;
 
+type TradeExecutorResult = Result<u64, TradeError>;
+
 impl TradeExecutor {
     // pub fn new(app: Arc<App>) -> Self {
     //     Self { app }
     // }
 
-    pub async fn execute_trade(&self, order: &Order) -> Result<(), TradeError> {
+    pub async fn execute_trade(&self, order: &Order) -> TradeExecutorResult {
         // let account = self.get_account();
         // let order = self.create_order(input);
 
-        Ok(())
+        Ok(chrono::Utc::now().timestamp() as u64)
     }
 }
