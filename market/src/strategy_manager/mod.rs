@@ -11,6 +11,7 @@ use tokio::time::{sleep, Duration};
 use tracing::{error, info};
 use trade_error::TradeError;
 use uuid::Uuid;
+use uuid7::uuid7;
 
 use self::broker::Broker;
 use crate::{
@@ -20,14 +21,16 @@ use crate::{
     App,
 };
 
-pub trait TradingClient {
-    fn create_order(&self, input: &AlertData) -> Order;
-    fn execute_order(&self, order: &Order) -> Result<(), TradeError>;
-    fn cancel_order(&self, order: &Order) -> Result<(), TradeError>;
-    fn get_order(&self, order: &Order) -> Result<(), TradeError>;
-    fn get_orders(&self) -> Result<(), TradeError>;
-    fn get_positions(&self) -> Result<(), TradeError>;
-    fn get_account(&self) -> Result<(), TradeError>;
+#[derive(Debug, ThisError)]
+pub enum StrategyManagerError {
+    #[error(transparent)]
+    ConfigError(#[from] ConfigError),
+    #[error(transparent)]
+    AlpacaClientError(#[from] apca::Error),
+    #[error("Unknown strategy - {0}")]
+    UnknownStrategy(String),
+    #[error("Unknown exchange - {0}")]
+    UnknownExchange(String),
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -47,21 +50,10 @@ pub struct StrategyManager {
     trade_executor: TradeExecutor,
 }
 
-#[derive(Debug, ThisError)]
-pub enum StrategyManagerError {
-    #[error(transparent)]
-    ConfigError(#[from] ConfigError),
-    #[error(transparent)]
-    AlpacaClientError(#[from] apca::Error),
-    #[error("Unknown strategy - {0}")]
-    UnknownStrategy(String),
-    #[error("Unknown exchange - {0}")]
-    UnknownExchange(String),
-}
-
 #[derive(Debug)]
 pub struct Order {
     id: Uuid,
+    ticker: String,
 }
 
 impl std::fmt::Display for Order {
@@ -100,6 +92,14 @@ impl StrategyManager {
             .iter()
             .find(|strategy| strategy.id == strategy_id)
     }
+
+//     fn create_order(&self, strategy: &Strategy, alert: &AlertData) -> Order {
+//         match strategy.broker {
+//             Broker::Alpaca => {
+// Broker::Alpaca => {
+//             }
+//         }
+//     }
 }
 
 #[axum::async_trait]
