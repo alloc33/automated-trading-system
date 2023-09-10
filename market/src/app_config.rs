@@ -1,8 +1,5 @@
 use config::{Config, ConfigError, File};
 use serde::Deserialize;
-use uuid::Uuid;
-
-use crate::strategy_manager::broker::Broker;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Database {
@@ -10,20 +7,15 @@ pub struct Database {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct Strategy {
-    pub id: Uuid,
-    pub name: String,
-    pub enabled: bool,
-    pub broker: Broker,
-    pub max_event_retries: u8,
-    pub event_retry_delay: f64,
+pub struct Alpaca {
+    pub apca_api_key_id: String,
+    pub apca_api_secret_key: String
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppConfig {
     pub api_key: String,
     pub database: Database,
-    pub strategies: Vec<Strategy>,
 }
 
 impl AppConfig {
@@ -34,8 +26,4 @@ impl AppConfig {
 
         config.try_deserialize()
     }
-}
-
-pub trait StrategySelector {
-    fn select(&self, id: Uuid) -> Strategy;
 }
