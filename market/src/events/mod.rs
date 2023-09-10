@@ -7,7 +7,10 @@ use tokio::sync::{
 };
 use tracing::error;
 
-use crate::{api::alert::AlertData, strategy_manager::trade_error::TradeError};
+use crate::{
+    api::alert::AlertData,
+    strategy_manager::{trade_error::TradeError, StrategyManagerError},
+};
 
 #[derive(Clone, Debug)]
 pub struct EventBus {
@@ -19,10 +22,8 @@ pub struct EventBus {
 pub enum HandleEventError {
     #[error(transparent)]
     TradeError(#[from] TradeError),
-    #[error("Unknown exchange - {0}")]
-    UnknownExchange(String),
-    #[error("Unknown strategy - {0}")]
-    UnknownStrategy(String),
+    #[error(transparent)]
+    StrategyManagerError(#[from] StrategyManagerError),
 }
 
 #[axum::async_trait]

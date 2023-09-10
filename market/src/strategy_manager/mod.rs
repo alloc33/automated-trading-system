@@ -3,9 +3,10 @@ pub mod trade_error;
 
 use std::sync::Arc;
 
-use apca::Client as AlpacaClient
+use apca::{ApiInfo, Client as AlpacaClient};
 use config::{Config, ConfigError, File};
 use serde::Deserialize;
+use thiserror::Error as ThisError;
 use tokio::time::{sleep, Duration};
 use tracing::{error, info};
 use trade_error::TradeError;
@@ -46,6 +47,18 @@ pub struct StrategyManager {
     trade_executor: TradeExecutor,
 }
 
+#[derive(Debug, ThisError)]
+pub enum StrategyManagerError {
+    #[error(transparent)]
+    ConfigError(#[from] ConfigError),
+    #[error(transparent)]
+    AlpacaClientError(#[from] apca::Error),
+    #[error("Unknown strategy - {0}")]
+    UnknownStrategy(String),
+    #[error("Unknown exchange - {0}")]
+    UnknownExchange(String),
+}
+
 #[derive(Debug)]
 pub struct Order {
     id: Uuid,
@@ -58,16 +71,26 @@ impl std::fmt::Display for Order {
 }
 
 impl StrategyManager {
-    pub fn new(app_state: Arc<App>, trade_executor: TradeExecutor) -> Result<Self, ConfigError> {
-        let config = Config::builder()
+    pub fn new(
+        app_state: Arc<App>,
+        trade_executor: TradeExecutor,
+    ) -> Result<Self, StrategyManagerError> {
+        let strategies = Config::builder()
             .add_source(File::with_name("market/strategies.toml"))
-            .build()?;
+            .build()
+            .map_err(StrategyManagerError::ConfigError)?
+            .try_deserialize::<Vec<Strategy>>()?;
 
-        let strategies = config.try_deserialize::<Vec<Strategy>>()?;
+        let alpaca_client = AlpacaClient::new(ApiInfo::from_parts(
+            &app_state.config.alpaca.apca_api_base_url,
+            &app_state.config.alpaca.apca_api_key_id,
+            &app_state.config.alpaca.apca_api_secret_key,
+        )?);
 
         Ok(Self {
             app_state,
             strategies,
+            alpaca_client,
             trade_executor,
         })
     }
@@ -87,29 +110,28 @@ impl EventHandler for StrategyManager {
         if let Some(strategy) = self.find_strategy(event.strategy_id) {
             let mut retries = 0;
 
-            let order = strategy.broker.create_order(event);
+            // let order = strategy.broker.create_order(event);
 
-            loop {
-                let trade_result = self.trade_executor.execute_order(&order).await;
+            // loop {
+            //     let trade_result = self.trade_executor.execute_order(&order).await;
 
-                if trade_result.is_ok() {
-                    info!("Order successfully executed");
-                    return Ok(());
-                }
+            //     if trade_result.is_ok() {
+            //         info!("Order successfully executed");
+            //         return Ok(());
+            //     }
 
-                retries += 1;
+            //     retries += 1;
 
-                if retries >= strategy.max_event_retries {
-                    error!("Max event retries reached, giving up.");
-                    return Err(TradeError::MaxRetriesReached(order).into());
-                }
+            //     if retries >= strategy.max_event_retries {
+            //         error!("Max event retries reached, giving up.");
+            //         return Err(TradeError::MaxRetriesReached(order).into());
+            //     }
 
-                tokio::time::sleep(Duration::from_secs_f64(strategy.event_retry_delay)).await;
-            }
+            //     tokio::time::sleep(Duration::from_secs_f64(strategy.event_retry_delay)).await;
+            // }
+            Ok(())
         } else {
-            Err(HandleEventError::UnknownStrategy(
-                event.strategy_id.to_string(),
-            ))
+            Err(StrategyManagerError::UnknownStrategy(event.strategy_id.to_string()).into())
         }
     }
 }

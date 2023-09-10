@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     api::alert::AlertData,
     strategy_manager::{trade_error::TradeError, Order},
-    App
+    App,
 };
 
 pub mod alpaca_client;

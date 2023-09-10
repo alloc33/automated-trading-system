@@ -18,5 +18,5 @@ Cargo.lock
 
 /target
 .env
-config.toml
 strategies.toml
+config/

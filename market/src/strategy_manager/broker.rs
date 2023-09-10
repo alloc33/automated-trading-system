@@ -1,8 +1,7 @@
 use serde::Deserialize;
 
+use super::{trade_error::TradeError, Order, TradingClient};
 use crate::api::alert::AlertData;
-
-use super::{TradingClient, Order, trade_error::TradeError};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "lowercase")]
