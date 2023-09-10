@@ -2,6 +2,8 @@ use config::{Config, ConfigError, File};
 use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::strategy_manager::broker::Broker;
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct Database {
     pub url: String,
@@ -22,13 +24,6 @@ pub struct AppConfig {
     pub api_key: String,
     pub database: Database,
     pub strategies: Vec<Strategy>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Broker {
-    Alpaca,
-    // TODO: ?add more brokers
 }
 
 impl AppConfig {
