@@ -39,8 +39,8 @@ pub struct Strategy {
     pub name: String,
     pub enabled: bool,
     pub broker: Broker,
-    pub max_event_retries: u8,
-    pub event_retry_delay: f64,
+    pub max_order_retries: u8,
+    pub order_retry_delay: f64,
 }
 
 pub struct StrategyManager {
@@ -87,19 +87,16 @@ impl StrategyManager {
         })
     }
 
-    fn find_strategy(&self, strategy_id: Uuid) -> Option<&Strategy> {
+    fn find_strategy(&self, strategy_id: Uuid) -> Result<&Strategy, StrategyManagerError> {
         self.strategies
             .iter()
             .find(|strategy| strategy.id == strategy_id)
+            .ok_or_else(|| StrategyManagerError::UnknownStrategy(strategy_id.to_string()))
     }
 
-//     fn create_order(&self, strategy: &Strategy, alert: &AlertData) -> Order {
-//         match strategy.broker {
-//             Broker::Alpaca => {
-// Broker::Alpaca => {
-//             }
-//         }
-//     }
+    fn create_order(&self, strategy: &Strategy) -> Result<Order, StrategyManagerError> {
+        todo!()
+    }
 }
 
 #[axum::async_trait]
@@ -107,31 +104,30 @@ impl EventHandler for StrategyManager {
     type EventPayload = AlertData;
 
     async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError> {
-        if let Some(strategy) = self.find_strategy(event.strategy_id) {
-            let mut retries = 0;
+        let strategy = self.find_strategy(event.strategy_id)?;
 
-            // let order = strategy.broker.create_order(event);
+        // if let Some(strategy) = self.find_strategy(event.strategy_id) {
+        // let mut retries = 0;
 
-            // loop {
-            //     let trade_result = self.trade_executor.execute_order(&order).await;
+        // let order = strategy.broker.create_order(event);
 
-            //     if trade_result.is_ok() {
-            //         info!("Order successfully executed");
-            //         return Ok(());
-            //     }
+        // loop {
+        //     let trade_result = self.trade_executor.execute_order(&order).await;
 
-            //     retries += 1;
+        //     if trade_result.is_ok() {
+        //         info!("Order successfully executed");
+        //         return Ok(());
+        //     }
 
-            //     if retries >= strategy.max_event_retries {
-            //         error!("Max event retries reached, giving up.");
-            //         return Err(TradeError::MaxRetriesReached(order).into());
-            //     }
+        //     retries += 1;
 
-            //     tokio::time::sleep(Duration::from_secs_f64(strategy.event_retry_delay)).await;
-            // }
-            Ok(())
-        } else {
-            Err(StrategyManagerError::UnknownStrategy(event.strategy_id.to_string()).into())
-        }
+        //     if retries >= strategy.max_event_retries {
+        //         error!("Max event retries reached, giving up.");
+        //         return Err(TradeError::MaxRetriesReached(order).into());
+        //     }
+
+        //     tokio::time::sleep(Duration::from_secs_f64(strategy.event_retry_delay)).await;
+        // }
+        Ok(())
     }
 }
