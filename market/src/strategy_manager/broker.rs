@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use super::{trade_error::TradeError, Order, TradingClient};
+use super::{trade_error::TradeError, Order};
 use crate::api::alert::AlertData;
 
 #[derive(Debug, Clone, Deserialize)]

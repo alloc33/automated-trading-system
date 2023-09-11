@@ -56,9 +56,12 @@ pub struct Order {
     ticker: String,
 }
 
-impl std::fmt::Display for Order {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{ id: {} }}", self.id)
+impl Order {
+    fn from_alert_data<'a>(
+        alert_data: &AlertData,
+        // strategy_validator: fn(Uuid) -> Result<'&Strategy, StrategyManagerError>,
+    ) -> Result<Self, StrategyManagerError> {
+        todo!()
     }
 }
 
@@ -87,15 +90,11 @@ impl StrategyManager {
         })
     }
 
-    fn find_strategy(&self, strategy_id: Uuid) -> Result<&Strategy, StrategyManagerError> {
+    fn validate_strategy(&self, strategy_id: Uuid) -> Result<&Strategy, StrategyManagerError> {
         self.strategies
             .iter()
             .find(|strategy| strategy.id == strategy_id)
             .ok_or_else(|| StrategyManagerError::UnknownStrategy(strategy_id.to_string()))
-    }
-
-    fn create_order(&self, strategy: &Strategy) -> Result<Order, StrategyManagerError> {
-        todo!()
     }
 }
 
@@ -104,7 +103,7 @@ impl EventHandler for StrategyManager {
     type EventPayload = AlertData;
 
     async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError> {
-        let strategy = self.find_strategy(event.strategy_id)?;
+        let strategy = self.validate_strategy(event.strategy_id)?;
 
         // if let Some(strategy) = self.find_strategy(event.strategy_id) {
         // let mut retries = 0;
@@ -129,5 +128,11 @@ impl EventHandler for StrategyManager {
         //     tokio::time::sleep(Duration::from_secs_f64(strategy.event_retry_delay)).await;
         // }
         Ok(())
+    }
+}
+
+impl std::fmt::Display for Order {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{ id: {} }}", self.id)
     }
 }
