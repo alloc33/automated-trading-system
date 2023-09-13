@@ -57,13 +57,18 @@ pub async fn build_state(
 }
 
 pub fn build_routes(app_state: Arc<App>) -> Router {
-    Router::new()
-        .route("/webhook/alert", post(api::webhook_receiver::receive_alert))
-        .layer(
-            ServiceBuilder::new()
-                .layer(from_fn_with_state(app_state.clone(), middleware::auth))
-                .layer(from_fn(middleware::log_request))
-                .layer(from_fn(middleware::log_response)),
-        )
-        .with_state(Arc::clone(&app_state))
+    let mut router = Router::new();
+    #[cfg(feature = "webhooks")]
+    {
+        router = router.route("/webhook/alert", post(api::webhook_receiver::receive_alert));
+    }
+
+    router = router.route("/status", post(|| async { "OK" })).layer(
+        ServiceBuilder::new()
+            .layer(from_fn_with_state(app_state.clone(), middleware::auth))
+            .layer(from_fn(middleware::log_request))
+            .layer(from_fn(middleware::log_response)),
+    );
+
+    router.with_state(Arc::clone(&app_state))
 }

@@ -10,14 +10,14 @@ pub struct Database {
 pub struct Alpaca {
     pub apca_api_key_id: String,
     pub apca_api_secret_key: String,
-    pub apca_api_base_url: String
+    pub apca_api_base_url: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppConfig {
     pub api_key: String,
     pub database: Database,
-    pub alpaca: Alpaca
+    pub alpaca: Alpaca,
 }
 
 impl AppConfig {
