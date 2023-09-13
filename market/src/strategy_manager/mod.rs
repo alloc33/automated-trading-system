@@ -16,7 +16,7 @@ use uuid7::uuid7;
 use self::broker::Broker;
 use crate::{
     api::alert::AlertData,
-    events::{EventHandler, HandleEventError},
+    events::{EventHandler, HandleEventError, Event},
     trade_executor::TradeExecutor,
     App,
 };
@@ -31,6 +31,8 @@ pub enum StrategyManagerError {
     UnknownStrategy(String),
     #[error("Unknown exchange - {0}")]
     UnknownExchange(String),
+    #[error("Strategy {0} with id {1} is disabled")]
+    StrategyDisabled(String, String),
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -54,15 +56,6 @@ pub struct StrategyManager {
 pub struct Order {
     id: Uuid,
     ticker: String,
-}
-
-impl Order {
-    fn from_alert_data<'a>(
-        alert_data: &AlertData,
-        // strategy_validator: fn(Uuid) -> Result<'&Strategy, StrategyManagerError>,
-    ) -> Result<Self, StrategyManagerError> {
-        todo!()
-    }
 }
 
 impl StrategyManager {
@@ -90,11 +83,27 @@ impl StrategyManager {
         })
     }
 
-    fn validate_strategy(&self, strategy_id: Uuid) -> Result<&Strategy, StrategyManagerError> {
-        self.strategies
+    fn create_order(&self, alert_data: &AlertData) -> Result<Order, StrategyManagerError> {
+        // Validate strategy - check if strategy exists and it's enabled.
+        let validated_strategy = self.strategies
             .iter()
-            .find(|strategy| strategy.id == strategy_id)
-            .ok_or_else(|| StrategyManagerError::UnknownStrategy(strategy_id.to_string()))
+            .find(|strategy| strategy.id == alert_data.strategy_id)
+            .ok_or_else(|| StrategyManagerError::UnknownStrategy(alert_data.strategy_id.to_string()))?;
+
+        if !validated_strategy.enabled {
+            return Err(StrategyManagerError::StrategyDisabled(
+            validated_strategy.name.clone(),
+            validated_strategy.id.to_string(),
+            ));
+        }
+
+        // TODO: Complete Order creation
+        let order = Order {
+            id: uuid7::new_v7(),
+            ticker: alert_data.ticker.clone()
+        };
+
+        Ok(order)
     }
 }
 
@@ -102,8 +111,15 @@ impl StrategyManager {
 impl EventHandler for StrategyManager {
     type EventPayload = AlertData;
 
+    // NOTE: Have to create a method which would validate strategy and create order, because
+    // strategy is a part of AlertData
     async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError> {
         let strategy = self.validate_strategy(event.strategy_id)?;
+
+        if !strategy.enabled {
+            tracing::info!("Strategy {} is disabled, ignoring event", strategy.name);
+            return Ok(());
+        }
 
         // if let Some(strategy) = self.find_strategy(event.strategy_id) {
         // let mut retries = 0;
@@ -127,7 +143,11 @@ impl EventHandler for StrategyManager {
 
         //     tokio::time::sleep(Duration::from_secs_f64(strategy.event_retry_delay)).await;
         // }
-        Ok(())
+
+        // _ = self.app_state.event_sender.send(Event::);
+
+        Ok(())event
+        ,''event
     }
 }
 
