@@ -1,0 +1,43 @@
+targets = []
+
+[advisories]
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+vulnerability = "deny"
+unmaintained = "warn"
+yanked = "warn"
+notice = "warn"
+ignore = [
+    "RUSTSEC-2020-0071",
+    "RUSTSEC-2023-0053",
+]
+
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "MPL-2.0",
+    "ISC",
+    "OpenSSL",
+    "Unicode-DFS-2016"
+]
+copyleft = "deny"
+exceptions = [
+ { allow = ["GPL-3.0"], name = "apca", version = "*" },
+ { allow = ["GPL-3.0"], name = "http-endpoint", version = "*" },
+ { allow = ["GPL-3.0"], name = "websocket-util", version = "*" },
+ { allow = ["GPL-3.0"], name = "serde_variant", version = "*" },
+ { allow = ["GPL-3.0"], name = "num-decimal", version = "*" },
+]
+
+[[licenses.clarify]]
+name = "ring"
+version = "*"
+expression = "MIT AND ISC AND OpenSSL"
+license-files = [
+    { path = "LICENSE", hash = 0xbd0eed23 }
+]
+
+[licenses.private]
+ignore = true
