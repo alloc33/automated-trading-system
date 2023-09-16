@@ -41,14 +41,17 @@ pub async fn dispatch_events(
     while let Some(event) = receiver.recv().await {
         match event.clone() {
             Event::WebhookAlert(alert_data) => {
-                // let trade_signal_handler = Arc::clone(&trade_signal_handler);
-                // let alert_data = alert_data.clone();
-                tokio::spawn(strategy_manager.process_trading_alert(alert_data));
+                let strategy_manager_clone = Arc::clone(&strategy_manager);
+                tokio::spawn(async move {
+                    strategy_manager_clone.process_trading_alert(alert_data).await;
+                });
             }
             Event::UpdateStrategy(_) => {}
         }
     }
 }
+
+async fn tttest() {}
 
 #[derive(Debug, Clone)]
 pub enum Event {

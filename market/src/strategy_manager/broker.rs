@@ -1,4 +1,4 @@
-u&alert_data.clone()se serde::Deserialize;
+use serde::Deserialize;
 
 use super::{trade_error::TradeError, Order};
 use crate::api::alert::AlertData;

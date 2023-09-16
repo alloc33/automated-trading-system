@@ -104,8 +104,7 @@ impl StrategyManager {
         Ok(order)
     }
 
-    pub async fn process_trading_alert(&self, alert_data: AlertData) -> Result<(), StrategyManagerError> {
-        Ok(())
+    pub async fn process_trading_alert(&self, alert_data: AlertData) {
     }
 }
 
