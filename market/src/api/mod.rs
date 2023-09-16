@@ -1,6 +1,4 @@
-#[cfg(feature = "webhooks")]
 pub mod alert;
-#[cfg(feature = "webhooks")]
 pub mod webhook_receiver;
 pub mod error;
 pub mod pagination;

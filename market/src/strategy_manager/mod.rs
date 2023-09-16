@@ -146,8 +146,7 @@ impl EventHandler for StrategyManager {
 
         // _ = self.app_state.event_sender.send(Event::);
 
-        Ok(())event
-        ,''event
+        Ok(())
     }
 }
 

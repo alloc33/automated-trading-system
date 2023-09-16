@@ -55,7 +55,6 @@ pub async fn dispatch_events(
     let mut receiver = event_receiver.lock().await;
     while let Some(event) = receiver.recv().await {
         match event.clone() {
-            #[cfg(feature = "webhooks")]
             Event::WebhookAlert(alert_data) => {
                 let trade_signal_handler = Arc::clone(&trade_signal_handler);
 
@@ -71,6 +70,5 @@ pub async fn dispatch_events(
 
 #[derive(Debug, Clone)]
 pub enum Event {
-    #[cfg(feature = "webhooks")]
-    WebhookAlert(AlertData), // TODO: add more events. ?manual trades
+    WebhookAlert(AlertData),
 }
