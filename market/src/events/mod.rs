@@ -8,29 +8,14 @@ use tokio::sync::{
 use tracing::error;
 
 use crate::{
-    api::alert::AlertData,
-    strategy_manager::{trade_error::TradeError, StrategyManagerError},
+    api::{alert::AlertData, strategy::UpdateStrategy},
+    strategy_manager::{trade_error::TradeError, StrategyManager, StrategyManagerError},
 };
 
 #[derive(Clone, Debug)]
 pub struct EventBus {
     pub sender: UnboundedSender<Event>,
     pub receiver: Arc<Mutex<UnboundedReceiver<Event>>>,
-}
-
-#[derive(Debug, ThisError)]
-pub enum HandleEventError {
-    #[error(transparent)]
-    TradeError(#[from] TradeError),
-    #[error(transparent)]
-    StrategyManagerError(#[from] StrategyManagerError),
-}
-
-#[axum::async_trait]
-pub trait EventHandler {
-    type EventPayload;
-
-    async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError>;
 }
 
 #[allow(clippy::new_without_default)]
@@ -50,20 +35,17 @@ impl EventBus {
 /// Receive alert and pass it to the strategy manager through the event bus.
 pub async fn dispatch_events(
     event_receiver: Arc<Mutex<UnboundedReceiver<Event>>>,
-    trade_signal_handler: Arc<dyn EventHandler<EventPayload = AlertData> + Send + Sync>,
+    strategy_manager: Arc<StrategyManager>,
 ) {
     let mut receiver = event_receiver.lock().await;
     while let Some(event) = receiver.recv().await {
         match event.clone() {
             Event::WebhookAlert(alert_data) => {
-                let trade_signal_handler = Arc::clone(&trade_signal_handler);
-
-                tokio::spawn(async move {
-                    if let Err(err) = trade_signal_handler.handle_event(&alert_data).await {
-                        error!(error = ?err, "Cannot process trading signal");
-                    }
-                });
+                // let trade_signal_handler = Arc::clone(&trade_signal_handler);
+                // let alert_data = alert_data.clone();
+                tokio::spawn(strategy_manager.process_trading_alert(alert_data));
             }
+            Event::UpdateStrategy(_) => {}
         }
     }
 }
@@ -71,4 +53,5 @@ pub async fn dispatch_events(
 #[derive(Debug, Clone)]
 pub enum Event {
     WebhookAlert(AlertData),
+    UpdateStrategy(UpdateStrategy),
 }

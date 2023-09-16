@@ -14,12 +14,7 @@ use uuid::Uuid;
 use uuid7::uuid7;
 
 use self::broker::Broker;
-use crate::{
-    api::alert::AlertData,
-    events::{EventHandler, HandleEventError, Event},
-    trade_executor::TradeExecutor,
-    App,
-};
+use crate::{api::alert::AlertData, events::Event, trade_executor::TradeExecutor, App};
 
 #[derive(Debug, ThisError)]
 pub enum StrategyManagerError {
@@ -85,70 +80,77 @@ impl StrategyManager {
 
     fn create_order(&self, alert_data: &AlertData) -> Result<Order, StrategyManagerError> {
         // Validate strategy - check if strategy exists and it's enabled.
-        let validated_strategy = self.strategies
+        let validated_strategy = self
+            .strategies
             .iter()
             .find(|strategy| strategy.id == alert_data.strategy_id)
-            .ok_or_else(|| StrategyManagerError::UnknownStrategy(alert_data.strategy_id.to_string()))?;
+            .ok_or_else(|| {
+                StrategyManagerError::UnknownStrategy(alert_data.strategy_id.to_string())
+            })?;
 
         if !validated_strategy.enabled {
             return Err(StrategyManagerError::StrategyDisabled(
-            validated_strategy.name.clone(),
-            validated_strategy.id.to_string(),
+                validated_strategy.name.clone(),
+                validated_strategy.id.to_string(),
             ));
         }
 
         // TODO: Complete Order creation
         let order = Order {
             id: uuid7::new_v7(),
-            ticker: alert_data.ticker.clone()
+            ticker: alert_data.ticker.clone(),
         };
 
         Ok(order)
     }
-}
 
-#[axum::async_trait]
-impl EventHandler for StrategyManager {
-    type EventPayload = AlertData;
-
-    // NOTE: Have to create a method which would validate strategy and create order, because
-    // strategy is a part of AlertData
-    async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError> {
-        let strategy = self.validate_strategy(event.strategy_id)?;
-
-        if !strategy.enabled {
-            tracing::info!("Strategy {} is disabled, ignoring event", strategy.name);
-            return Ok(());
-        }
-
-        // if let Some(strategy) = self.find_strategy(event.strategy_id) {
-        // let mut retries = 0;
-
-        // let order = strategy.broker.create_order(event);
-
-        // loop {
-        //     let trade_result = self.trade_executor.execute_order(&order).await;
-
-        //     if trade_result.is_ok() {
-        //         info!("Order successfully executed");
-        //         return Ok(());
-        //     }
-
-        //     retries += 1;
-
-        //     if retries >= strategy.max_event_retries {
-        //         error!("Max event retries reached, giving up.");
-        //         return Err(TradeError::MaxRetriesReached(order).into());
-        //     }
-
-        //     tokio::time::sleep(Duration::from_secs_f64(strategy.event_retry_delay)).await;
-        // }
-
-        // _ = self.app_state.event_sender.send(Event::);
-
+    pub async fn process_trading_alert(&self, alert_data: AlertData) -> Result<(), StrategyManagerError> {
         Ok(())
     }
 }
+
+// #[axum::async_trait]
+// impl EventHandler for StrategyManager {
+//     type EventPayload = AlertData;
+
+//     // NOTE: Have to create a method which would validate strategy and create order, because
+//     // strategy is a part of AlertData
+//     async fn handle_event(&self, event: &Self::EventPayload) -> Result<(), HandleEventError> {
+//         let strategy = self.validate_strategy(event.strategy_id)?;
+
+//         if !strategy.enabled {
+//             tracing::info!("Strategy {} is disabled, ignoring event", strategy.name);
+//             return Ok(());
+//         }
+
+//         // if let Some(strategy) = self.find_strategy(event.strategy_id) {
+//         // let mut retries = 0;
+
+//         // let order = strategy.broker.create_order(event);
+
+//         // loop {
+//         //     let trade_result = self.trade_executor.execute_order(&order).await;
+
+//         //     if trade_result.is_ok() {
+//         //         info!("Order successfully executed");
+//         //         return Ok(());
+//         //     }
+
+//         //     retries += 1;
+
+//         //     if retries >= strategy.max_event_retries {
+//         //         error!("Max event retries reached, giving up.");
+//         //         return Err(TradeError::MaxRetriesReached(order).into());
+//         //     }
+
+//         //     tokio::time::sleep(Duration::from_secs_f64(strategy.event_retry_delay)).await;
+//         // }
+
+//         // _ = self.app_state.event_sender.send(Event::);
+
+//         Ok(())
+//     }
+// }
 
 impl std::fmt::Display for Order {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
