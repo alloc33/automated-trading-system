@@ -4,6 +4,7 @@ use std::{
     sync::Arc,
 };
 
+use apca::{ApiInfo, Client as AlpacaClient};
 use market::{
     app_config::AppConfig,
     build_routes, build_state,
@@ -27,13 +28,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Build app state
     let state: Arc<App> = build_state(config, events.sender.clone()).await?.into();
 
+    // Initialize clients
+    let alpaca_client = initialize_clients(&state.config)?;
+
     // Setup trading related components
-    let trade_executor = TradeExecutor;
+    let trade_executor = TradeExecutor { alpaca_client };
 
     let strategy_manager = Arc::new(StrategyManager::new(Arc::clone(&state), trade_executor)?);
 
     // Start event dispatcher
-    tokio::spawn(dispatch_events(events.receiver, strategy_manager));
+    tokio::spawn(dispatch_events(Some(events.receiver), strategy_manager));
 
     // Start server
     let app = build_routes(state);
@@ -44,4 +48,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
 
     Ok(())
+}
+
+// TODO: Add more clients?
+fn initialize_clients(config: &AppConfig) -> Result<AlpacaClient, Box<dyn Error>> {
+    let alpaca_client = AlpacaClient::new(ApiInfo::from_parts(
+        &config.alpaca.apca_api_base_url,
+        &config.alpaca.apca_api_key_id,
+        &config.alpaca.apca_api_secret_key,
+    )?);
+
+    Ok(alpaca_client)
 }

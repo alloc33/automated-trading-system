@@ -38,7 +38,6 @@ pub enum StrategyManagerError {
 
 pub struct StrategyManager {
     app_state: Arc<App>,
-    alpaca_client: AlpacaClient,
     trade_executor: TradeExecutor,
 }
 
@@ -55,15 +54,8 @@ impl StrategyManager {
         app_state: Arc<App>,
         trade_executor: TradeExecutor,
     ) -> Result<Self, StrategyManagerError> {
-        let alpaca_client = AlpacaClient::new(ApiInfo::from_parts(
-            &app_state.config.alpaca.apca_api_base_url,
-            &app_state.config.alpaca.apca_api_key_id,
-            &app_state.config.alpaca.apca_api_secret_key,
-        )?);
-
         Ok(Self {
             app_state,
-            alpaca_client,
             trade_executor,
         })
     }
