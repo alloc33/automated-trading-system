@@ -10,8 +10,9 @@ use uuid::Uuid;
 use uuid7::uuid7;
 
 use crate::{
-    api::alert::{WebhookAlertData, TradeSignal, AlertType},
-    trade_executor::TradeExecutor, App, broker::Broker,
+    api::alert::{AlertType, TradeSignal, WebhookAlertData},
+    trade_executor::TradeExecutor,
+    App,
 };
 
 #[derive(Debug, ThisError)]
@@ -41,10 +42,15 @@ pub struct StrategyManager {
     trade_executor: TradeExecutor,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Broker {
+    Alpaca,
+}
+
 #[derive(Debug)]
 pub struct Order {
     pub id: Uuid,
-    pub broker: Broker,
     pub ticker: String,
     pub order_type: AlertType,
 }
@@ -66,13 +72,15 @@ impl StrategyManager {
     ) -> Result<(), StrategyManagerError> {
         let order = Order {
             id: uuid7::new_v7(),
-            broker: trade_signal.strategy.broker,
             ticker: trade_signal.ticker,
-            order_type: trade_signal.alert_type
+            order_type: trade_signal.alert_type,
         };
 
         // TODO: Retry
-        // let result = self.trade_executor.execute_order(&order);
+        let result = self
+            .trade_executor
+            .execute_order(&order, &trade_signal.strategy.broker)
+            .await;
 
         Ok(())
     }

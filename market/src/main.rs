@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let state: Arc<App> = build_state(config, events_sender.clone()).await?.into();
 
     // Initialize clients
-    let alpaca_client = initialize_clients(&state.config)?;
+    let alpaca_client = build_trade_clients(&state.config)?;
 
     // Setup trading related components
     let trade_executor = TradeExecutor { alpaca_client };
@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 // TODO: Add more clients?
-fn initialize_clients(config: &AppConfig) -> Result<AlpacaClient, Box<dyn Error>> {
+fn build_trade_clients(config: &AppConfig) -> Result<AlpacaClient, Box<dyn Error>> {
     let alpaca_client = AlpacaClient::new(ApiInfo::from_parts(
         &config.alpaca.apca_api_base_url,
         &config.alpaca.apca_api_key_id,
