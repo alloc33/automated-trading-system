@@ -1,15 +1,13 @@
 use std::{fmt::Debug, sync::Arc};
 
-use thiserror::Error as ThisError;
 use tokio::sync::{
     mpsc::{error::SendError, unbounded_channel, UnboundedReceiver, UnboundedSender},
     Mutex,
 };
-use tracing::error;
 
 use crate::{
-    api::{alert::AlertData, strategy::UpdateStrategy},
-    strategy_manager::{trade_error::TradeError, StrategyManager, StrategyManagerError},
+    api::{alert::TradeSignal, strategy::UpdateStrategy},
+    strategy_manager::StrategyManager,
 };
 
 #[derive(Clone, Debug)]
@@ -43,7 +41,9 @@ pub async fn dispatch_events(
             Event::WebhookAlert(alert_data) => {
                 let strategy_manager = Arc::clone(&strategy_manager);
                 tokio::spawn(async move {
-                    strategy_manager.process_trade_signal(alert_data).await;
+                    if let Err(err) = strategy_manager.process_trade_signal(alert_data).await {
+                        tracing::error!("Error processing trade signal: {err:?}");
+                    }
                 });
             }
             Event::UpdateStrategy(_) => {}
@@ -53,7 +53,7 @@ pub async fn dispatch_events(
 
 #[derive(Debug, Clone)]
 pub enum Event {
-    WebhookAlert(AlertData),
+    WebhookAlert(TradeSignal),
     // TODO: UpdateStrategy
     UpdateStrategy(UpdateStrategy),
 }

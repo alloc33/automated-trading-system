@@ -4,6 +4,8 @@ pub mod events;
 pub mod middleware;
 pub mod strategy_manager;
 pub mod trade_executor;
+pub mod strategy;
+pub mod broker;
 
 use std::{sync::Arc, time::Duration};
 

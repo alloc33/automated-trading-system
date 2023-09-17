@@ -2,20 +2,16 @@ use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::WithRejection;
-use uuid::Uuid;
-
-use super::{error::ApiError, Response};
-use crate::{alert::AlertData, app_config::Strategy, events::Event, App};
+use super::{alert::TradeSignal, error::ApiError, Response};
+use crate::{alert::WebhookAlertData, events::Event, App};
 
 pub async fn receive_alert(
     State(app): State<Arc<App>>,
-    WithRejection(alert_data, _): WithRejection<Json<AlertData>, ApiError>,
+    WithRejection(alert_data, _): WithRejection<Json<WebhookAlertData>, ApiError>,
 ) -> Response<()> {
-    validate_strategy(alert_data.strategy_id, &app.config.strategies)?;
+    let trade_signal = TradeSignal::from_alert_data(alert_data.0.clone(), &app.config)?;
 
-    _ = app
-        .event_sender
-        .send(Event::WebhookAlert(alert_data.0.clone()));
+    _ = app.event_sender.send(Event::WebhookAlert(trade_signal));
 
     _ = sqlx::query!(
         r#"
@@ -56,26 +52,4 @@ pub async fn receive_alert(
     .await?;
 
     Ok((StatusCode::OK, Json::default()))
-}
-
-fn validate_strategy(strategy_id: Uuid, strategies: &[Strategy]) -> Result<(), ApiError> {
-    let validated_strategy = strategies
-        .iter()
-        .find(|strategy| strategy.id == strategy_id)
-        .ok_or_else(|| {
-            let msg = format!("Unknown strategy - {}", strategy_id);
-            tracing::error!(msg);
-            ApiError::BadRequest(msg)
-        })?;
-
-    if !validated_strategy.enabled {
-        let msg = format!(
-            "Strategy {} with id {} is disabled",
-            validated_strategy.name, validated_strategy.id
-        );
-        tracing::error!(msg);
-        return Err(ApiError::BadRequest(msg));
-    }
-
-    Ok(())
 }

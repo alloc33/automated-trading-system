@@ -1,6 +1,3 @@
-pub mod broker;
-pub mod trade_error;
-
 use std::sync::Arc;
 
 use apca::{ApiInfo, Client as AlpacaClient};
@@ -9,12 +6,13 @@ use serde::Deserialize;
 use thiserror::Error as ThisError;
 use tokio::time::{sleep, Duration};
 use tracing::{error, info};
-use trade_error::TradeError;
 use uuid::Uuid;
 use uuid7::uuid7;
 
-use self::broker::Broker;
-use crate::{api::alert::AlertData, events::Event, trade_executor::TradeExecutor, App};
+use crate::{
+    api::alert::{WebhookAlertData, TradeSignal, AlertType},
+    trade_executor::TradeExecutor, App, broker::Broker,
+};
 
 #[derive(Debug, ThisError)]
 pub enum StrategyManagerError {
@@ -30,6 +28,14 @@ pub enum StrategyManagerError {
     StrategyDisabled(String, String),
 }
 
+// #[derive(Debug, ThisError)]
+// pub enum TradeError {
+//     #[error("{0}")]
+//     InsufficientFunds(String),
+//     #[error("Order max retries reached. {0}")]
+//     MaxRetriesReached(Order),
+// }
+
 pub struct StrategyManager {
     app_state: Arc<App>,
     alpaca_client: AlpacaClient,
@@ -38,8 +44,10 @@ pub struct StrategyManager {
 
 #[derive(Debug)]
 pub struct Order {
-    id: Uuid,
-    ticker: String,
+    pub id: Uuid,
+    pub broker: Broker,
+    pub ticker: String,
+    pub order_type: AlertType,
 }
 
 impl StrategyManager {
@@ -60,34 +68,21 @@ impl StrategyManager {
         })
     }
 
-    pub async fn process_trade_signal(&self, alert_data: AlertData) -> Result<(), StrategyManagerError> {
-        Ok(())
-    }
-
-    fn create_order(&self, alert_data: &AlertData) -> Result<Order, StrategyManagerError> {
-        // Validate strategy - check if strategy exists and it's enabled.
-        // let validated_strategy = self
-        //     .strategies
-        //     .iter()
-        //     .find(|strategy| strategy.id == alert_data.strategy_id)
-        //     .ok_or_else(|| {
-        //         StrategyManagerError::UnknownStrategy(alert_data.strategy_id.to_string())
-        //     })?;
-
-        // if !validated_strategy.enabled {
-        //     return Err(StrategyManagerError::StrategyDisabled(
-        //         validated_strategy.name.clone(),
-        //         validated_strategy.id.to_string(),
-        //     ));
-        // }
-
-        // TODO: Complete Order creation
+    pub async fn process_trade_signal(
+        &self,
+        trade_signal: TradeSignal,
+    ) -> Result<(), StrategyManagerError> {
         let order = Order {
             id: uuid7::new_v7(),
-            ticker: alert_data.ticker.clone(),
+            broker: trade_signal.strategy.broker,
+            ticker: trade_signal.ticker,
+            order_type: trade_signal.alert_type
         };
 
-        Ok(order)
+        // TODO: Retry
+        // let result = self.trade_executor.execute_order(&order);
+
+        Ok(())
     }
 }
 

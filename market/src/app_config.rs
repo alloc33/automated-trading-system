@@ -1,7 +1,8 @@
-use config::{Config, ConfigError, File, Environment};
+use config::{Config, ConfigError, File};
 use serde::Deserialize;
-use uuid::Uuid;
 use std::env;
+
+use crate::strategy::Strategy;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Database {
@@ -13,22 +14,6 @@ pub struct Alpaca {
     pub apca_api_key_id: String,
     pub apca_api_secret_key: String,
     pub apca_api_base_url: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct Strategy {
-    pub id: Uuid,
-    pub name: String,
-    pub enabled: bool,
-    pub broker: Broker,
-    pub max_order_retries: u8,
-    pub order_retry_delay: f64,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Broker {
-    Alpaca,
 }
 
 #[derive(Debug, Clone, Deserialize)]
