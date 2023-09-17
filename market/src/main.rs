@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let strategy_manager = Arc::new(StrategyManager::new(Arc::clone(&state), trade_executor)?);
 
     // Start event dispatcher
-    tokio::spawn(dispatch_events(Some(events.receiver), strategy_manager));
+    tokio::spawn(dispatch_events(events.receiver, strategy_manager));
 
     // Start server
     let app = build_routes(state);
