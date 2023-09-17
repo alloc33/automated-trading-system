@@ -2,10 +2,10 @@ use serde::Deserialize;
 
 use crate::trade_executor::TradeExecutor;
 
-// #[axum::async_trait]
-// pub trait TradingClient {
-//     async fn get_account_info(&self, trade_executor: &TradeExecutor) -> Result<(), ()>;
-// }
+#[axum::async_trait]
+pub trait BrokerClient {
+    async fn get_account_info(&self, trade_executor: &TradeExecutor) -> Result<(), ()>;
+}
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "lowercase")]

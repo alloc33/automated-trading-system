@@ -1,29 +1,9 @@
 use std::{fmt::Debug, sync::Arc};
 
-use tokio::sync::mpsc::{error::SendError, unbounded_channel, UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::{api::alert::TradeSignal, strategy_manager::StrategyManager};
 
-#[derive(Debug)]
-pub struct EventBus {
-    pub sender: UnboundedSender<Event>,
-    pub receiver: Option<UnboundedReceiver<Event>>,
-}
-
-#[allow(clippy::new_without_default)]
-impl EventBus {
-    pub fn new() -> Self {
-        let (sender, receiver) = unbounded_channel::<Event>();
-        Self {
-            sender,
-            receiver: Some(receiver),
-        }
-    }
-
-    pub async fn send(&self, event: Event) -> Result<(), SendError<Event>> {
-        self.sender.send(event)
-    }
-}
 
 /// Receive alert and pass it to the strategy manager through the event bus.
 pub async fn dispatch_events(
