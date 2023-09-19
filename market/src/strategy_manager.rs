@@ -11,7 +11,7 @@ use uuid7::uuid7;
 
 use crate::{
     api::alert::{AlertType, TradeSignal, WebhookAlertData},
-    trade_executor::TradeExecutor,
+    trade_executor::{BrokerStruct, TradeExecutor},
     App,
 };
 
@@ -37,17 +37,11 @@ pub enum StrategyManagerError {
 //     MaxRetriesReached(Order),
 // }
 
-pub struct StrategyManager {
-    app_state: Arc<App>,
-    trade_executor: TradeExecutor,
-}
-
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Broker {
     Alpaca,
 }
-
 #[derive(Debug)]
 pub struct Order {
     pub id: Uuid,
@@ -55,14 +49,29 @@ pub struct Order {
     pub order_type: AlertType,
 }
 
+pub struct StrategyManager {
+    app_state: Arc<App>,
+    clients: Vec<BrokerStruct>
+    // trade_executor: TradeExecutor,
+}
+
 impl StrategyManager {
     pub fn new(
         app_state: Arc<App>,
-        trade_executor: TradeExecutor,
+        // trade_executor: TradeExecutor,
     ) -> Result<Self, StrategyManagerError> {
+        let alpaca_client = AlpacaClient::new(ApiInfo::from_parts(
+            &app_state.config.alpaca.apca_api_base_url,
+            &app_state.config.alpaca.apca_api_key_id,
+            &app_state.config.alpaca.apca_api_secret_key,
+        )?);
+
+        let clients = vec![BrokerStruct(Box::new(alpaca_client))];
+
         Ok(Self {
             app_state,
-            trade_executor,
+            clients
+            // trade_executor,
         })
     }
 
@@ -76,11 +85,17 @@ impl StrategyManager {
             order_type: trade_signal.alert_type,
         };
 
-        // TODO: Retry
-        let result = self
-            .trade_executor
-            .execute_order(&order, &trade_signal.strategy.broker)
-            .await;
+        // match trade_signal.strategy.broker {
+        //     Broker::Alpaca => {
+        //         self.process_alpaca_order(order, trade_signal).await?;
+        //     }
+        // }
+
+        // // TODO: Retry
+        // let result = self
+        //     .trade_executor
+        //     .execute_order(&order, &trade_signal.strategy.broker)
+        //     .await;
 
         Ok(())
     }

@@ -2,9 +2,9 @@ pub mod api;
 pub mod app_config;
 pub mod events;
 pub mod middleware;
+pub mod strategy;
 pub mod strategy_manager;
 pub mod trade_executor;
-pub mod strategy;
 
 use std::{sync::Arc, time::Duration};
 

@@ -1,6 +1,7 @@
+use std::env;
+
 use config::{Config, ConfigError, File};
 use serde::Deserialize;
-use std::env;
 
 use crate::strategy::Strategy;
 
@@ -30,10 +31,7 @@ impl AppConfig {
 
         let config = Config::builder()
             .add_source(File::with_name("market/config/default"))
-            .add_source(
-                File::with_name(&format!("market/config/{}", run_mode))
-                    .required(false),
-            )
+            .add_source(File::with_name(&format!("market/config/{}", run_mode)).required(false))
             .build()?;
 
         // Now that we're done, let's access our configuration

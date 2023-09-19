@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::WithRejection;
+
 use super::{alert::TradeSignal, error::ApiError, Response};
 use crate::{alert::WebhookAlertData, events::Event, App};
 
