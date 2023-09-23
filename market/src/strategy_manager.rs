@@ -15,10 +15,13 @@ use uuid7::uuid7;
 use crate::{
     api::alert::{AlertType, TradeSignal, WebhookAlertData},
     broker_client::{BrokerClient, Clients},
-    App, 
+    App,
 };
 
-pub async fn process_trade_signal(client: impl BrokerClient, signal: TradeSignal) -> Result<(), ()> {
+pub async fn process_trade_signal(
+    client: impl BrokerClient,
+    signal: TradeSignal,
+) -> Result<(), ()> {
     Ok(())
 }
 

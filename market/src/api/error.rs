@@ -111,10 +111,7 @@ impl IntoResponse for ApiError {
             ),
             Self::ConstraintError(err) => (StatusCode::UNPROCESSABLE_ENTITY, err.to_string()),
             Self::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
-            Self::TradingClientError(err) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
-            }
-        
+            Self::TradingClientError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
         };
 
         let body = Json(serde_json::json!({
@@ -153,7 +150,7 @@ impl ApiError {
             Self::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             Self::ServiceUnavailable => StatusCode::SERVICE_UNAVAILABLE,
             Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
-            Self::TradingClientError(_) => StatusCode::INTERNAL_SERVER_ERROR
+            Self::TradingClientError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 

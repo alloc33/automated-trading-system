@@ -1,16 +1,21 @@
 use std::sync::Arc;
 
-use axum::{extract::{State, Query}, http::StatusCode, Json};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
 use axum_extra::extract::WithRejection;
 use serde::Deserialize;
+use tracing::error;
 
-use super::{alert::TradeSignal, error::ApiError, Response, objects::Account};
+use super::{alert::TradeSignal, error::ApiError, objects::Account, Response};
 use crate::{
     alert::WebhookAlertData,
+    broker_client::BrokerClient,
     strategy_manager::{process_trade_signal, Broker},
-    App, broker_client::BrokerClient,
+    App,
 };
-use tracing::error;
 
 pub async fn receive_webhook_alert(
     State(app): State<Arc<App>>,
@@ -78,7 +83,6 @@ pub async fn get_account(
     State(app): State<Arc<App>>,
     Query(query): Query<BrokerQuery>,
 ) -> Response<Account> {
-
     let client = match query.broker {
         Broker::Alpaca => &app.clients.alpaca,
     };
@@ -92,7 +96,6 @@ pub async fn get_assets(
     State(app): State<Arc<App>>,
     Query(query): Query<BrokerQuery>,
 ) -> Response<()> {
-
     Ok((StatusCode::OK, Json::default()))
 }
 
@@ -100,7 +103,6 @@ pub async fn get_orders(
     State(app): State<Arc<App>>,
     Query(query): Query<BrokerQuery>,
 ) -> Response<()> {
-
     Ok((StatusCode::OK, Json::default()))
 }
 

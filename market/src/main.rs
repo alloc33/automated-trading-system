@@ -5,13 +5,7 @@ use std::{
 };
 
 use apca::{ApiInfo, Client as AlpacaClient};
-use market::{
-    app_config::AppConfig,
-    build_routes, build_state,
-    broker_client::Clients,
-    App,
-};
-use tokio::sync::mpsc::unbounded_channel;
+use market::{app_config::AppConfig, broker_client::Clients, build_routes, build_state, App};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -49,4 +43,3 @@ fn build_trade_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error
         alpaca: Arc::new(alpaca),
     }))
 }
-

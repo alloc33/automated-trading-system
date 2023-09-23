@@ -24,10 +24,7 @@ pub struct App {
     pub config: AppConfig,
 }
 
-pub async fn build_state(
-    config: AppConfig,
-    clients: Arc<Clients>,
-) -> Result<App, SqlxError> {
+pub async fn build_state(config: AppConfig, clients: Arc<Clients>) -> Result<App, SqlxError> {
     let opts = config.database.url.parse::<PgConnectOptions>()?;
 
     let pool = sqlx::pool::PoolOptions::new()
