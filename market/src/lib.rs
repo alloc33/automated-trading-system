@@ -1,14 +1,12 @@
 pub mod api;
 pub mod app_config;
-pub mod client;
+pub mod broker_client;
 pub mod middleware;
 pub mod strategy;
 pub mod strategy_manager;
-pub mod events;
 
 use std::{sync::Arc, time::Duration};
 
-use apca::Client as AlpacaClient;
 use api::*;
 use app_config::AppConfig;
 use axum::{
@@ -16,20 +14,19 @@ use axum::{
     routing::post,
     Router,
 };
-use events::Event;
+use broker_client::Clients;
 use sqlx::{postgres::PgConnectOptions, Error as SqlxError, PgPool};
-use tokio::sync::mpsc::UnboundedSender;
 use tower::ServiceBuilder;
 
 pub struct App {
     pub db: PgPool,
-    pub event_sender: UnboundedSender<Event>,
+    pub clients: Arc<Clients>,
     pub config: AppConfig,
 }
 
 pub async fn build_state(
     config: AppConfig,
-    event_sender: UnboundedSender<Event>,
+    clients: Arc<Clients>,
 ) -> Result<App, SqlxError> {
     let opts = config.database.url.parse::<PgConnectOptions>()?;
 
@@ -51,7 +48,7 @@ pub async fn build_state(
 
     let app = App {
         db: pool,
-        event_sender,
+        clients,
         config,
     };
 

@@ -9,6 +9,8 @@ use serde::Serialize;
 use thiserror::Error as ThisError;
 use tracing::error;
 
+use crate::broker_client::BrokerError;
+
 pub const INTERNAL_SERVER_ERROR: &str = "Internal server error occurred...";
 pub const PAYLOAD_TOO_LARGE: &str = "Request payload too large...";
 pub const DATABASE_UNAVAILABLE: &str = "Database is unavailable...";
@@ -84,6 +86,9 @@ pub enum ApiError {
 
     #[error(transparent)]
     JsonExtractorRejection(#[from] JsonRejection),
+
+    #[error(transparent)]
+    TradingClientError(#[from] BrokerError),
 }
 
 impl IntoResponse for ApiError {
@@ -106,6 +111,10 @@ impl IntoResponse for ApiError {
             ),
             Self::ConstraintError(err) => (StatusCode::UNPROCESSABLE_ENTITY, err.to_string()),
             Self::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
+            Self::TradingClientError(err) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+            }
+        
         };
 
         let body = Json(serde_json::json!({
@@ -144,6 +153,7 @@ impl ApiError {
             Self::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             Self::ServiceUnavailable => StatusCode::SERVICE_UNAVAILABLE,
             Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
+            Self::TradingClientError(_) => StatusCode::INTERNAL_SERVER_ERROR
         }
     }
 

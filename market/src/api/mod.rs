@@ -4,6 +4,7 @@ pub mod pagination;
 pub mod price;
 pub mod strategy;
 pub mod handlers;
+pub mod objects;
 
 use axum::{http::StatusCode, Json};
 

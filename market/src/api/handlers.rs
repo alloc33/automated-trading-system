@@ -1,14 +1,16 @@
 use std::sync::Arc;
 
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::{State, Query}, http::StatusCode, Json};
 use axum_extra::extract::WithRejection;
+use serde::Deserialize;
 
-use super::{alert::TradeSignal, error::ApiError, Response};
+use super::{alert::TradeSignal, error::ApiError, Response, objects::Account};
 use crate::{
     alert::WebhookAlertData,
-    events::{Action, Event},
-    App,
+    strategy_manager::{process_trade_signal, Broker},
+    App, broker_client::BrokerClient,
 };
+use tracing::error;
 
 pub async fn receive_webhook_alert(
     State(app): State<Arc<App>>,
@@ -16,9 +18,15 @@ pub async fn receive_webhook_alert(
 ) -> Response<()> {
     let trade_signal = TradeSignal::from_alert_data(alert_data.0.clone(), &app.config)?;
 
-    _ = app
-        .event_sender
-        .send(Event::WebhookAlert(Box::new(trade_signal)));
+    let client = match &trade_signal.strategy.broker {
+        Broker::Alpaca => Arc::clone(&app.clients.alpaca),
+    };
+
+    tokio::spawn(async {
+        if let Err(err) = process_trade_signal(client, trade_signal).await {
+            error!("Failed to process trade signal, error: {:?}", err);
+        };
+    });
 
     _ = sqlx::query!(
         r#"
@@ -61,10 +69,44 @@ pub async fn receive_webhook_alert(
     Ok((StatusCode::OK, Json::default()))
 }
 
-pub async fn action(
+#[derive(Debug, Deserialize)]
+pub struct BrokerQuery {
+    broker: Broker,
+}
+
+pub async fn get_account(
     State(app): State<Arc<App>>,
-    WithRejection(action, _): WithRejection<Json<Action>, ApiError>,
+    Query(query): Query<BrokerQuery>,
+) -> Response<Account> {
+
+    let client = match query.broker {
+        Broker::Alpaca => &app.clients.alpaca,
+    };
+
+    let account = client.get_account().await?;
+
+    Ok((StatusCode::OK, Json(account)))
+}
+
+pub async fn get_assets(
+    State(app): State<Arc<App>>,
+    Query(query): Query<BrokerQuery>,
 ) -> Response<()> {
 
+    Ok((StatusCode::OK, Json::default()))
+}
+
+pub async fn get_orders(
+    State(app): State<Arc<App>>,
+    Query(query): Query<BrokerQuery>,
+) -> Response<()> {
+
+    Ok((StatusCode::OK, Json::default()))
+}
+
+pub async fn get_positions(
+    State(app): State<Arc<App>>,
+    Query(query): Query<BrokerQuery>,
+) -> Response<()> {
     Ok((StatusCode::OK, Json::default()))
 }
