@@ -11,7 +11,7 @@ use api::*;
 use app_config::AppConfig;
 use axum::{
     middleware::{from_fn, from_fn_with_state},
-    routing::post,
+    routing::{post, get},
     Router,
 };
 use broker_client::Clients;
@@ -55,6 +55,7 @@ pub async fn build_state(config: AppConfig, clients: Arc<Clients>) -> Result<App
 pub fn build_routes(app_state: Arc<App>) -> Router {
     Router::new()
         .route("/webhook/alert", post(handlers::receive_webhook_alert))
+        .route("/account", get(handlers::get_account))
         .layer(
             ServiceBuilder::new()
                 .layer(from_fn_with_state(app_state.clone(), middleware::auth))
