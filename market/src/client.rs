@@ -1,34 +1,33 @@
+use std::sync::Arc;
+
 use apca::Client as AlpacaClient;
 
 use crate::strategy_manager::{Broker, Order};
 
 #[axum::async_trait]
-trait BrokerClient {
+pub trait BrokerClient: Send + Sync {
     async fn get_account(&self) -> Result<(), ()>;
     async fn get_positions(&self) -> Result<(), ()>;
     async fn get_orders(&self) -> Result<(), ()>;
-    // async fn get_order(&self) -> Result<(), ()>;
     async fn place_order(&self, order: &Order, broker: &Broker) -> Result<(), ()>;
     async fn cancel_order(&self) -> Result<(), ()>;
     async fn cancel_all_orders(&self) -> Result<(), ()>;
 }
 
-pub struct TradeExecutor;
+pub struct Clients {
+    pub alpaca: Arc<AlpacaClient>,
+}
 
-
-
-// impl<C: MarketClient> TradeExecutor<T> {
-//     pub fn new(alpaca_client: AlpacaClient) -> Self {
-//         Self { alpaca_client }
-//     }
-
-//     pub async fn execute_order(&self, order: &Order, broker: &Broker) -> Result<(), ()> {
-//         Ok(())
-//     }
-// }
+impl Clients {
+    pub fn new(alpaca: AlpacaClient) -> Self {
+        Self {
+            alpaca: Arc::new(alpaca)
+        }
+    }
+}
 
 #[axum::async_trait]
-impl BrokerClient for AlpacaClient {
+impl BrokerClient for Arc<AlpacaClient> {
     async fn get_account(&self) -> Result<(), ()> {
         Ok(())
     }
@@ -38,9 +37,7 @@ impl BrokerClient for AlpacaClient {
     async fn get_orders(&self) -> Result<(), ()> {
         Ok(())
     }
-    // async fn get_order(&self) -> Result<(), ()> {
-    //     Ok(())
-    // }
+
     async fn place_order(&self, order: &Order, broker: &Broker) -> Result<(), ()> {
         Ok(())
     }
@@ -52,4 +49,3 @@ impl BrokerClient for AlpacaClient {
     }
 }
 
-pub struct BrokerStruct(pub Box<dyn BrokerClient>);

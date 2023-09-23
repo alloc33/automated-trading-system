@@ -12,7 +12,7 @@ pub async fn receive_alert(
 ) -> Response<()> {
     let trade_signal = TradeSignal::from_alert_data(alert_data.0.clone(), &app.config)?;
 
-    _ = app.event_sender.send(Event::WebhookAlert(trade_signal));
+    _ = app.event_sender.send(Event::WebhookAlert(Box::new(trade_signal)));
 
     _ = sqlx::query!(
         r#"

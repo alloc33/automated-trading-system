@@ -1,33 +1,59 @@
-use std::{fmt::Debug, sync::Arc};
+use std::sync::Arc;
 
 use tokio::sync::mpsc::UnboundedReceiver;
+use tracing::error;
+use uuid::Uuid;
 
-use crate::{api::alert::TradeSignal, strategy_manager::StrategyManager};
+use crate::{
+    api::alert::TradeSignal,
+    client::Clients,
+    strategy_manager::{process_market_action, process_trade_signal, Broker},
+};
 
-/// Receive alert and pass it to the strategy manager through the event bus.
-pub async fn dispatch_events(
-    mut event_receiver: Option<UnboundedReceiver<Event>>,
-    strategy_manager: Arc<StrategyManager>,
-) {
-    let mut receiver = event_receiver.take().expect("Event receiver");
+#[derive(Debug, Clone)]
+pub enum ActionType {
+    CancelOrder(Uuid),
+    CancelAllOrders,
+    GetAccount,
+    GetPositions,
+    GetOrders,
+}
 
-    while let Some(event) = receiver.recv().await {
-        match event.clone() {
-            Event::WebhookAlert(signal) => {
-                let strategy_manager = Arc::clone(&strategy_manager);
-                tokio::spawn(async move {
-                    if let Err(err) = strategy_manager.process_trade_signal(signal).await {
-                        tracing::error!("Error processing trade signal: {err:?}");
-                    }
-                });
-            } // Event::UpdateStrategy(_) => {}
-        }
-    }
+#[derive(Debug, Clone)]
+pub struct Action {
+    pub broker: Broker,
+    pub action: ActionType,
 }
 
 #[derive(Debug, Clone)]
 pub enum Event {
-    WebhookAlert(TradeSignal),
-    // TODO: UpdateStrategy
-    // UpdateStrategy(UpdateStrategy),
+    WebhookAlert(Box<TradeSignal>),
+    ClientAction(Action),
+}
+
+pub async fn handle_events(mut event_receiver: UnboundedReceiver<Event>, clients: Arc<Clients>) {
+    while let Some(event) = event_receiver.recv().await {
+        let clients = Arc::clone(&clients);
+
+        let client_for_broker = move |broker: &Broker| match broker {
+            Broker::Alpaca => Arc::clone(&clients.alpaca),
+        };
+
+        match event.clone() {
+            Event::WebhookAlert(signal) => {
+                tokio::spawn(async move {
+                    process_trade_signal(client_for_broker(&signal.strategy.broker), *signal)
+                        .await
+                        .unwrap_or_else(|e| error!("Error processing trade signal: {:?}", e));
+                });
+            }
+            Event::ClientAction(action) => {
+                tokio::spawn(async move {
+                    process_market_action(client_for_broker(&action.broker), action.action)
+                        .await
+                        .unwrap_or_else(|e| error!("Error processing manual action: {:?}", e));
+                });
+            }
+        }
+    }
 }

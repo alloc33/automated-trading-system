@@ -1,14 +1,15 @@
 pub mod api;
 pub mod app_config;
-pub mod events;
+pub mod client;
 pub mod middleware;
 pub mod strategy;
 pub mod strategy_manager;
-pub mod trade_executor;
+pub mod events;
 
 use std::{sync::Arc, time::Duration};
 
-use api::*;
+use apca::Client as AlpacaClient;
+use api::{*, alert::TradeSignal};
 use app_config::AppConfig;
 use axum::{
     middleware::{from_fn, from_fn_with_state},

@@ -8,9 +8,8 @@ use apca::{ApiInfo, Client as AlpacaClient};
 use market::{
     app_config::AppConfig,
     build_routes, build_state,
-    events::{dispatch_events, Event},
-    strategy_manager::StrategyManager,
-    trade_executor::TradeExecutor,
+    client::Clients,
+    events::{handle_events, Event},
     App,
 };
 use tokio::sync::mpsc::unbounded_channel;
@@ -30,14 +29,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let state: Arc<App> = build_state(config, events_sender.clone()).await?.into();
 
     // Initialize clients
-    let alpaca_client = build_trade_clients(&state.config)?;
-
-    // Setup trading related components
-    let trade_executor = TradeExecutor { alpaca_client };
-    let strategy_manager = Arc::new(StrategyManager::new(Arc::clone(&state), trade_executor)?);
+    let clients = build_trade_clients(&state.config)?;
 
     // Start event dispatcher
-    tokio::spawn(dispatch_events(Some(events_receiver), strategy_manager));
+    tokio::spawn(handle_events(events_receiver, clients));
 
     // Start server
     let app = build_routes(state);
@@ -50,13 +45,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// TODO: Add more clients?
-fn build_trade_clients(config: &AppConfig) -> Result<AlpacaClient, Box<dyn Error>> {
-    let alpaca_client = AlpacaClient::new(ApiInfo::from_parts(
+fn build_trade_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error>> {
+    let alpaca = AlpacaClient::new(ApiInfo::from_parts(
         &config.alpaca.apca_api_base_url,
         &config.alpaca.apca_api_key_id,
         &config.alpaca.apca_api_secret_key,
     )?);
 
-    Ok(alpaca_client)
+    Ok(Arc::new(Clients {
+        alpaca: Arc::new(alpaca),
+    }))
 }
