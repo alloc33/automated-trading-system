@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let config = AppConfig::build()?;
 
     // Initialize clients
-    let clients = build_trade_clients(&config)?;
+    let clients = build_broker_clients(&config)?;
 
     // Build app state
     let state: Arc<App> = build_state(config, clients).await?.into();
@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn build_trade_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error>> {
+fn build_broker_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error>> {
     let alpaca = AlpacaClient::new(ApiInfo::from_parts(
         &config.alpaca.apca_api_base_url,
         &config.alpaca.apca_api_key_id,
