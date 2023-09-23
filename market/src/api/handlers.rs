@@ -4,15 +4,21 @@ use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::WithRejection;
 
 use super::{alert::TradeSignal, error::ApiError, Response};
-use crate::{alert::WebhookAlertData, events::Event, App};
+use crate::{
+    alert::WebhookAlertData,
+    events::{Action, Event},
+    App,
+};
 
-pub async fn receive_alert(
+pub async fn receive_webhook_alert(
     State(app): State<Arc<App>>,
     WithRejection(alert_data, _): WithRejection<Json<WebhookAlertData>, ApiError>,
 ) -> Response<()> {
     let trade_signal = TradeSignal::from_alert_data(alert_data.0.clone(), &app.config)?;
 
-    _ = app.event_sender.send(Event::WebhookAlert(Box::new(trade_signal)));
+    _ = app
+        .event_sender
+        .send(Event::WebhookAlert(Box::new(trade_signal)));
 
     _ = sqlx::query!(
         r#"
@@ -51,6 +57,14 @@ pub async fn receive_alert(
     )
     .execute(&app.db)
     .await?;
+
+    Ok((StatusCode::OK, Json::default()))
+}
+
+pub async fn action(
+    State(app): State<Arc<App>>,
+    WithRejection(action, _): WithRejection<Json<Action>, ApiError>,
+) -> Response<()> {
 
     Ok((StatusCode::OK, Json::default()))
 }

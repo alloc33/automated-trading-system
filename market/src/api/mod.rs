@@ -3,7 +3,7 @@ pub mod error;
 pub mod pagination;
 pub mod price;
 pub mod strategy;
-pub mod webhook_receiver;
+pub mod handlers;
 
 use axum::{http::StatusCode, Json};
 

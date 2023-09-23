@@ -56,3 +56,4 @@ fn build_trade_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error
         alpaca: Arc::new(alpaca),
     }))
 }
+

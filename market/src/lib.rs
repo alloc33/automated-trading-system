@@ -9,7 +9,7 @@ pub mod events;
 use std::{sync::Arc, time::Duration};
 
 use apca::Client as AlpacaClient;
-use api::{*, alert::TradeSignal};
+use api::*;
 use app_config::AppConfig;
 use axum::{
     middleware::{from_fn, from_fn_with_state},
@@ -60,7 +60,7 @@ pub async fn build_state(
 
 pub fn build_routes(app_state: Arc<App>) -> Router {
     Router::new()
-        .route("/webhook/alert", post(api::webhook_receiver::receive_alert))
+        .route("/webhook/alert", post(handlers::receive_webhook_alert))
         .layer(
             ServiceBuilder::new()
                 .layer(from_fn_with_state(app_state.clone(), middleware::auth))
