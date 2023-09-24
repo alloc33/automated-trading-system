@@ -27,7 +27,7 @@ pub async fn process_trade_signal(
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Broker {
+pub enum Exchange {
     Alpaca,
 }
 

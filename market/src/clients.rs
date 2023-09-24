@@ -6,7 +6,7 @@ use thiserror::Error as ThisError;
 
 use crate::{
     api::objects::Account,
-    strategy_manager::{Broker, Order},
+    strategy_manager::{Exchange, Order},
 };
 
 pub struct Clients {
@@ -22,45 +22,45 @@ impl Clients {
 }
 
 #[derive(Debug, ThisError)]
-pub enum BrokerError {
+pub enum ExchangeClientError {
     #[error("Alpaca error: {0}")]
     AlpacaError(String),
 }
 
 #[axum::async_trait]
 pub trait ExchangeClient: Send + Sync {
-    async fn get_account(&self) -> Result<Account, BrokerError>;
-    async fn get_positions(&self) -> Result<(), BrokerError>;
-    async fn get_orders(&self) -> Result<(), BrokerError>;
-    async fn place_order(&self, order: &Order, broker: &Broker) -> Result<(), BrokerError>;
-    async fn cancel_order(&self) -> Result<(), BrokerError>;
-    async fn cancel_all_orders(&self) -> Result<(), BrokerError>;
+    async fn get_account(&self) -> Result<Account, ExchangeClientError>;
+    async fn get_positions(&self) -> Result<(), ExchangeClientError>;
+    async fn get_orders(&self) -> Result<(), ExchangeClientError>;
+    async fn place_order(&self, order: &Order, exchange: &Exchange) -> Result<(), ExchangeClientError>;
+    async fn cancel_order(&self) -> Result<(), ExchangeClientError>;
+    async fn cancel_all_orders(&self) -> Result<(), ExchangeClientError>;
 }
 
 #[axum::async_trait]
 impl ExchangeClient for Arc<AlpacaClient> {
-    async fn get_account(&self) -> Result<Account, BrokerError> {
+    async fn get_account(&self) -> Result<Account, ExchangeClientError> {
         let result = self
             .issue::<account::Get>(&())
             .await
-            .map_err(|e| BrokerError::AlpacaError(e.to_string()))?;
+            .map_err(|e| ExchangeClientError::AlpacaError(e.to_string()))?;
 
         Ok(Account::AlpacaAccount(result))
     }
-    async fn get_positions(&self) -> Result<(), BrokerError> {
+    async fn get_positions(&self) -> Result<(), ExchangeClientError> {
         Ok(())
     }
-    async fn get_orders(&self) -> Result<(), BrokerError> {
+    async fn get_orders(&self) -> Result<(), ExchangeClientError> {
         Ok(())
     }
 
-    async fn place_order(&self, order: &Order, broker: &Broker) -> Result<(), BrokerError> {
+    async fn place_order(&self, order: &Order, exchange: &Exchange) -> Result<(), ExchangeClientError> {
         Ok(())
     }
-    async fn cancel_order(&self) -> Result<(), BrokerError> {
+    async fn cancel_order(&self) -> Result<(), ExchangeClientError> {
         Ok(())
     }
-    async fn cancel_all_orders(&self) -> Result<(), BrokerError> {
+    async fn cancel_all_orders(&self) -> Result<(), ExchangeClientError> {
         Ok(())
     }
 }

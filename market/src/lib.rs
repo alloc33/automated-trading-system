@@ -53,7 +53,7 @@ pub async fn build_state(config: AppConfig, clients: Arc<Clients>) -> Result<App
     Ok(app)
 }
 
-pub fn build_broker_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error>> {
+pub fn build_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error>> {
     let alpaca = AlpacaClient::new(ApiInfo::from_parts(
         &config.exchanges.alpaca.apca_api_base_url,
         &config.exchanges.alpaca.apca_api_key_id,

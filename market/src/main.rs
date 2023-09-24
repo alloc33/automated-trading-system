@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use market::{app_config::AppConfig, build_broker_clients, build_routes, build_state, App};
+use market::{app_config::AppConfig, build_clients, build_routes, build_state, App};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let config = AppConfig::build()?;
 
     // Initialize clients
-    let clients = build_broker_clients(&config)?;
+    let clients = build_clients(&config)?;
 
     // Build app state
     let state: Arc<App> = build_state(config, clients).await?.into();

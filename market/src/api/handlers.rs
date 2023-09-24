@@ -13,7 +13,7 @@ use super::{alert::TradeSignal, error::ApiError, objects::Account, Response};
 use crate::{
     alert::WebhookAlertData,
     clients::ExchangeClient,
-    strategy_manager::{process_trade_signal, Broker},
+    strategy_manager::{process_trade_signal, Exchange},
     App,
 };
 
@@ -23,8 +23,8 @@ pub async fn receive_webhook_alert(
 ) -> Response<()> {
     let trade_signal = TradeSignal::from_alert_data(alert_data.0.clone(), &app.config)?;
 
-    let client = match &trade_signal.strategy.broker {
-        Broker::Alpaca => Arc::clone(&app.clients.alpaca),
+    let client = match &trade_signal.strategy.exchange {
+        Exchange::Alpaca => Arc::clone(&app.clients.alpaca),
     };
 
     tokio::spawn(async {
@@ -76,7 +76,7 @@ pub async fn receive_webhook_alert(
 
 #[derive(Debug, Deserialize)]
 pub struct ExchangeQuery {
-    exchange: Broker,
+    exchange: Exchange,
 }
 
 pub async fn check_health(State(_app): State<Arc<App>>) -> Response<()> {
@@ -88,7 +88,7 @@ pub async fn get_account(
     Query(query): Query<ExchangeQuery>,
 ) -> Response<Account> {
     let client = match query.exchange {
-        Broker::Alpaca => &app.clients.alpaca,
+        Exchange::Alpaca => &app.clients.alpaca,
     };
 
     let account = client.get_account().await?;
