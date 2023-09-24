@@ -9,7 +9,7 @@ use serde::Serialize;
 use thiserror::Error as ThisError;
 use tracing::error;
 
-use crate::broker_client::BrokerError;
+use crate::clients::BrokerError;
 
 pub const INTERNAL_SERVER_ERROR: &str = "Internal server error occurred...";
 pub const PAYLOAD_TOO_LARGE: &str = "Request payload too large...";

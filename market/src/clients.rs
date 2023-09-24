@@ -28,7 +28,7 @@ pub enum BrokerError {
 }
 
 #[axum::async_trait]
-pub trait BrokerClient: Send + Sync {
+pub trait ExchangeClient: Send + Sync {
     async fn get_account(&self) -> Result<Account, BrokerError>;
     async fn get_positions(&self) -> Result<(), BrokerError>;
     async fn get_orders(&self) -> Result<(), BrokerError>;
@@ -38,7 +38,7 @@ pub trait BrokerClient: Send + Sync {
 }
 
 #[axum::async_trait]
-impl BrokerClient for Arc<AlpacaClient> {
+impl ExchangeClient for Arc<AlpacaClient> {
     async fn get_account(&self) -> Result<Account, BrokerError> {
         let result = self
             .issue::<account::Get>(&())

@@ -1,6 +1,6 @@
 pub mod api;
 pub mod app_config;
-pub mod broker_client;
+pub mod clients;
 pub mod middleware;
 pub mod strategy;
 pub mod strategy_manager;
@@ -15,7 +15,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use broker_client::Clients;
+use clients::Clients;
 use sqlx::{postgres::PgConnectOptions, Error as SqlxError, PgPool};
 use tower::ServiceBuilder;
 
@@ -55,9 +55,9 @@ pub async fn build_state(config: AppConfig, clients: Arc<Clients>) -> Result<App
 
 pub fn build_broker_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error>> {
     let alpaca = AlpacaClient::new(ApiInfo::from_parts(
-        &config.alpaca.apca_api_base_url,
-        &config.alpaca.apca_api_key_id,
-        &config.alpaca.apca_api_secret_key,
+        &config.exchanges.alpaca.apca_api_base_url,
+        &config.exchanges.alpaca.apca_api_key_id,
+        &config.exchanges.alpaca.apca_api_secret_key,
     )?);
 
     Ok(Arc::new(Clients {

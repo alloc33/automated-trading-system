@@ -14,12 +14,12 @@ use uuid7::uuid7;
 
 use crate::{
     api::alert::{AlertType, TradeSignal, WebhookAlertData},
-    broker_client::{BrokerClient, Clients},
+    clients::{ExchangeClient, Clients},
     App,
 };
 
 pub async fn process_trade_signal(
-    client: impl BrokerClient,
+    client: impl ExchangeClient,
     signal: TradeSignal,
 ) -> Result<(), ()> {
     Ok(())

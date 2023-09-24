@@ -12,7 +12,7 @@ use tracing::error;
 use super::{alert::TradeSignal, error::ApiError, objects::Account, Response};
 use crate::{
     alert::WebhookAlertData,
-    broker_client::BrokerClient,
+    clients::ExchangeClient,
     strategy_manager::{process_trade_signal, Broker},
     App,
 };
@@ -75,8 +75,8 @@ pub async fn receive_webhook_alert(
 }
 
 #[derive(Debug, Deserialize)]
-pub struct BrokerQuery {
-    broker: Broker,
+pub struct ExchangeQuery {
+    exchange: Broker,
 }
 
 pub async fn check_health(State(_app): State<Arc<App>>) -> Response<()> {
@@ -85,40 +85,34 @@ pub async fn check_health(State(_app): State<Arc<App>>) -> Response<()> {
 
 pub async fn get_account(
     State(app): State<Arc<App>>,
-    Query(query): Query<BrokerQuery>,
+    Query(query): Query<ExchangeQuery>,
 ) -> Response<Account> {
-    println!("abx");
-
-    let client = match query.broker {
+    let client = match query.exchange {
         Broker::Alpaca => &app.clients.alpaca,
     };
 
-    println!("reached");
-
     let account = client.get_account().await?;
-
-    println!("reached 1");
 
     Ok((StatusCode::OK, Json(account)))
 }
 
 pub async fn get_assets(
     State(app): State<Arc<App>>,
-    Query(query): Query<BrokerQuery>,
+    Query(query): Query<ExchangeQuery>,
 ) -> Response<()> {
     Ok((StatusCode::OK, Json::default()))
 }
 
 pub async fn get_orders(
     State(app): State<Arc<App>>,
-    Query(query): Query<BrokerQuery>,
+    Query(query): Query<ExchangeQuery>,
 ) -> Response<()> {
     Ok((StatusCode::OK, Json::default()))
 }
 
 pub async fn get_positions(
     State(app): State<Arc<App>>,
-    Query(query): Query<BrokerQuery>,
+    Query(query): Query<ExchangeQuery>,
 ) -> Response<()> {
     Ok((StatusCode::OK, Json::default()))
 }

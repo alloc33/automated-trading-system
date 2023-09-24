@@ -11,6 +11,11 @@ pub struct Database {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct Exchanges {
+    pub alpaca: Alpaca,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct Alpaca {
     pub apca_api_key_id: String,
     pub apca_api_secret_key: String,
@@ -21,7 +26,7 @@ pub struct Alpaca {
 pub struct AppConfig {
     pub api_key: String,
     pub database: Database,
-    pub alpaca: Alpaca,
+    pub exchanges: Exchanges,
     pub strategies: Vec<Strategy>,
 }
 
