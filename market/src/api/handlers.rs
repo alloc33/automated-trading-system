@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
@@ -12,8 +12,8 @@ use tracing::error;
 use super::{alert::TradeSignal, error::ApiError, objects::Account, Response};
 use crate::{
     alert::WebhookAlertData,
-    clients::ExchangeClient,
-    strategy_manager::{process_trade_signal, Exchange},
+    clients::{Clients, BrokerClient},
+    strategy_manager::{process_trade_signal, Broker},
     App,
 };
 
@@ -24,7 +24,7 @@ pub async fn receive_webhook_alert(
     let trade_signal = TradeSignal::from_alert_data(alert_data.0.clone(), &app.config)?;
 
     let client = match &trade_signal.strategy.exchange {
-        Exchange::Alpaca => Arc::clone(&app.clients.alpaca),
+        Broker::Alpaca => Arc::clone(&app.clients.alpaca),
     };
 
     tokio::spawn(async {
@@ -75,8 +75,27 @@ pub async fn receive_webhook_alert(
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ExchangeQuery {
-    exchange: Exchange,
+pub struct BrokerQuery {
+    broker: Broker,
+}
+
+impl BrokerQuery {
+    pub fn client<'a>(&self, app: &'a App) -> &'a impl BrokerClient {
+        match self.broker {
+            Broker::Alpaca => &app.clients.alpaca,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AssetQuery {
+    symbol: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub enum AssetTypeQuery {
+    Crypto(String),
+    USStock(String),
 }
 
 pub async fn check_health(State(_app): State<Arc<App>>) -> Response<()> {
@@ -85,11 +104,9 @@ pub async fn check_health(State(_app): State<Arc<App>>) -> Response<()> {
 
 pub async fn get_account(
     State(app): State<Arc<App>>,
-    Query(query): Query<ExchangeQuery>,
+    Query(exchange_query): Query<BrokerQuery>,
 ) -> Response<Account> {
-    let client = match query.exchange {
-        Exchange::Alpaca => &app.clients.alpaca,
-    };
+    let client = exchange_query.client(&app);
 
     let account = client.get_account().await?;
 
@@ -98,21 +115,29 @@ pub async fn get_account(
 
 pub async fn get_assets(
     State(app): State<Arc<App>>,
-    Query(query): Query<ExchangeQuery>,
+    Query(exchange_query): Query<BrokerQuery>,
+    Query(asset_type): Query<AssetTypeQuery>,
+    // Query(asset_query): Query<StockAssetQuery>,
 ) -> Response<()> {
+    let client = exchange_query.client(&app);
+
+    println!("asset_type: {:?}", asset_type);
+    // println!("asset_query: {:?}", asset_query);
+    println!("exchange_query: {:?}", exchange_query);
+
     Ok((StatusCode::OK, Json::default()))
 }
 
 pub async fn get_orders(
     State(app): State<Arc<App>>,
-    Query(query): Query<ExchangeQuery>,
+    Query(query): Query<BrokerQuery>,
 ) -> Response<()> {
     Ok((StatusCode::OK, Json::default()))
 }
 
 pub async fn get_positions(
     State(app): State<Arc<App>>,
-    Query(query): Query<ExchangeQuery>,
+    Query(query): Query<BrokerQuery>,
 ) -> Response<()> {
     Ok((StatusCode::OK, Json::default()))
 }

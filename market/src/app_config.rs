@@ -11,7 +11,7 @@ pub struct Database {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct Exchanges {
+pub struct Brokers {
     pub alpaca: Alpaca,
 }
 
@@ -26,7 +26,7 @@ pub struct Alpaca {
 pub struct AppConfig {
     pub api_key: String,
     pub database: Database,
-    pub exchanges: Exchanges,
+    pub brokers: Brokers,
     pub strategies: Vec<Strategy>,
 }
 

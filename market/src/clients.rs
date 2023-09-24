@@ -6,7 +6,7 @@ use thiserror::Error as ThisError;
 
 use crate::{
     api::objects::Account,
-    strategy_manager::{Exchange, Order},
+    strategy_manager::{Broker, Order},
 };
 
 pub struct Clients {
@@ -22,45 +22,53 @@ impl Clients {
 }
 
 #[derive(Debug, ThisError)]
-pub enum ExchangeClientError {
+pub enum BrokerClientError {
     #[error("Alpaca error: {0}")]
     AlpacaError(String),
 }
 
 #[axum::async_trait]
-pub trait ExchangeClient: Send + Sync {
-    async fn get_account(&self) -> Result<Account, ExchangeClientError>;
-    async fn get_positions(&self) -> Result<(), ExchangeClientError>;
-    async fn get_orders(&self) -> Result<(), ExchangeClientError>;
-    async fn place_order(&self, order: &Order, exchange: &Exchange) -> Result<(), ExchangeClientError>;
-    async fn cancel_order(&self) -> Result<(), ExchangeClientError>;
-    async fn cancel_all_orders(&self) -> Result<(), ExchangeClientError>;
+pub trait BrokerClient: Send + Sync {
+    async fn get_account(&self) -> Result<Account, BrokerClientError>;
+    async fn get_positions(&self) -> Result<(), BrokerClientError>;
+    async fn get_orders(&self) -> Result<(), BrokerClientError>;
+    async fn place_order(
+        &self,
+        order: &Order,
+        broker: &Broker,
+    ) -> Result<(), BrokerClientError>;
+    async fn cancel_order(&self) -> Result<(), BrokerClientError>;
+    async fn cancel_all_orders(&self) -> Result<(), BrokerClientError>;
 }
 
 #[axum::async_trait]
-impl ExchangeClient for Arc<AlpacaClient> {
-    async fn get_account(&self) -> Result<Account, ExchangeClientError> {
-        let result = self
-            .issue::<account::Get>(&())
-            .await
-            .map_err(|e| ExchangeClientError::AlpacaError(e.to_string()))?;
+impl BrokerClient for Arc<AlpacaClient> {
+    async fn get_account(&self) -> Result<Account, BrokerClientError> {
+        let result = self.issue::<account::Get>(&()).await.map_err(|e| {
+            dbg!(&e);
+            BrokerClientError::AlpacaError(e.to_string())
+        })?;
 
         Ok(Account::AlpacaAccount(result))
     }
-    async fn get_positions(&self) -> Result<(), ExchangeClientError> {
+    async fn get_positions(&self) -> Result<(), BrokerClientError> {
         Ok(())
     }
-    async fn get_orders(&self) -> Result<(), ExchangeClientError> {
+    async fn get_orders(&self) -> Result<(), BrokerClientError> {
         Ok(())
     }
 
-    async fn place_order(&self, order: &Order, exchange: &Exchange) -> Result<(), ExchangeClientError> {
+    async fn place_order(
+        &self,
+        order: &Order,
+        broker: &Broker,
+    ) -> Result<(), BrokerClientError> {
         Ok(())
     }
-    async fn cancel_order(&self) -> Result<(), ExchangeClientError> {
+    async fn cancel_order(&self) -> Result<(), BrokerClientError> {
         Ok(())
     }
-    async fn cancel_all_orders(&self) -> Result<(), ExchangeClientError> {
+    async fn cancel_all_orders(&self) -> Result<(), BrokerClientError> {
         Ok(())
     }
 }

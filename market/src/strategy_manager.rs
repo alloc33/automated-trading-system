@@ -14,12 +14,12 @@ use uuid7::uuid7;
 
 use crate::{
     api::alert::{AlertType, TradeSignal, WebhookAlertData},
-    clients::{ExchangeClient, Clients},
+    clients::{BrokerClient, Clients},
     App,
 };
 
 pub async fn process_trade_signal(
-    client: impl ExchangeClient,
+    client: impl BrokerClient,
     signal: TradeSignal,
 ) -> Result<(), ()> {
     Ok(())
@@ -27,7 +27,7 @@ pub async fn process_trade_signal(
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Exchange {
+pub enum Broker {
     Alpaca,
 }
 

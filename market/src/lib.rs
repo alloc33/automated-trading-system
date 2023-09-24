@@ -55,9 +55,9 @@ pub async fn build_state(config: AppConfig, clients: Arc<Clients>) -> Result<App
 
 pub fn build_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error>> {
     let alpaca = AlpacaClient::new(ApiInfo::from_parts(
-        &config.exchanges.alpaca.apca_api_base_url,
-        &config.exchanges.alpaca.apca_api_key_id,
-        &config.exchanges.alpaca.apca_api_secret_key,
+        &config.brokers.alpaca.apca_api_base_url,
+        &config.brokers.alpaca.apca_api_key_id,
+        &config.brokers.alpaca.apca_api_secret_key,
     )?);
 
     Ok(Arc::new(Clients {
@@ -69,6 +69,7 @@ pub fn build_routes(app_state: Arc<App>) -> Router {
     Router::new()
         .route("/webhook", post(handlers::receive_webhook_alert))
         .route("/account", get(handlers::get_account))
+        .route("/assets", get(handlers::get_assets))
         .route("/health", get(handlers::check_health))
         .layer(
             ServiceBuilder::new()

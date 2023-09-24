@@ -9,7 +9,7 @@ use serde::Serialize;
 use thiserror::Error as ThisError;
 use tracing::error;
 
-use crate::clients::ExchangeClientError;
+use crate::clients::BrokerClientError;
 
 pub const INTERNAL_SERVER_ERROR: &str = "Internal server error occurred...";
 pub const PAYLOAD_TOO_LARGE: &str = "Request payload too large...";
@@ -88,7 +88,7 @@ pub enum ApiError {
     JsonExtractorRejection(#[from] JsonRejection),
 
     #[error(transparent)]
-    TradingClientError(#[from] ExchangeClientError),
+    TradingClientError(#[from] BrokerClientError),
 }
 
 impl IntoResponse for ApiError {
