@@ -5,13 +5,14 @@ pub mod middleware;
 pub mod strategy;
 pub mod strategy_manager;
 
-use std::{sync::Arc, time::Duration};
+use std::{error::Error, sync::Arc, time::Duration};
 
+use apca::{ApiInfo, Client as AlpacaClient};
 use api::*;
 use app_config::AppConfig;
 use axum::{
     middleware::{from_fn, from_fn_with_state},
-    routing::{post, get},
+    routing::{get, post},
     Router,
 };
 use broker_client::Clients;
@@ -52,10 +53,23 @@ pub async fn build_state(config: AppConfig, clients: Arc<Clients>) -> Result<App
     Ok(app)
 }
 
+pub fn build_broker_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error>> {
+    let alpaca = AlpacaClient::new(ApiInfo::from_parts(
+        &config.alpaca.apca_api_base_url,
+        &config.alpaca.apca_api_key_id,
+        &config.alpaca.apca_api_secret_key,
+    )?);
+
+    Ok(Arc::new(Clients {
+        alpaca: Arc::new(alpaca),
+    }))
+}
+
 pub fn build_routes(app_state: Arc<App>) -> Router {
     Router::new()
-        .route("/webhook/alert", post(handlers::receive_webhook_alert))
+        .route("/webhook", post(handlers::receive_webhook_alert))
         .route("/account", get(handlers::get_account))
+        .route("/health", get(handlers::check_health))
         .layer(
             ServiceBuilder::new()
                 .layer(from_fn_with_state(app_state.clone(), middleware::auth))

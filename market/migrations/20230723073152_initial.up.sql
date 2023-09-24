@@ -1,6 +1,6 @@
 CREATE TABLE alerts
 (
-	alert_id  Uuid,
+	alert_id          Uuid,
 	ticker			  Text NOT NULL,
 	timeframe		  Text NOT NULL,
 	exchange		  Text NOT NULL,

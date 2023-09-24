@@ -4,8 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use apca::{ApiInfo, Client as AlpacaClient};
-use market::{app_config::AppConfig, broker_client::Clients, build_routes, build_state, App};
+use market::{app_config::AppConfig, build_broker_clients, build_routes, build_state, App};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -30,16 +29,4 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
 
     Ok(())
-}
-
-fn build_broker_clients(config: &AppConfig) -> Result<Arc<Clients>, Box<dyn Error>> {
-    let alpaca = AlpacaClient::new(ApiInfo::from_parts(
-        &config.alpaca.apca_api_base_url,
-        &config.alpaca.apca_api_key_id,
-        &config.alpaca.apca_api_secret_key,
-    )?);
-
-    Ok(Arc::new(Clients {
-        alpaca: Arc::new(alpaca),
-    }))
 }

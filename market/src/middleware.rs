@@ -19,7 +19,7 @@ pub async fn auth<B>(
 ) -> Result<impl IntoResponse, ApiError> {
     // NOTE: skip auth for post /alert endpoint. We don't need to check auth for tradingview
     // webhook as we use it's own secret key
-    if req.uri().path() == "/alert" && req.method() == axum::http::Method::POST {
+    if req.uri().path() == "/webhook" && req.method() == axum::http::Method::POST {
         return Ok(next.run(req).await);
     }
 

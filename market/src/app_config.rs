@@ -34,11 +34,23 @@ impl AppConfig {
             .add_source(File::with_name(&format!("market/config/{}", run_mode)).required(false))
             .build()?;
 
-        // Now that we're done, let's access our configuration
         println!("debug: {:?}", config.get_bool("debug"));
         println!("database: {:?}", config.get::<String>("database.url"));
 
-        // You can deserialize (and thus freeze) the entire configuration as
+        config.try_deserialize()
+    }
+
+    pub fn build_for_test() -> Result<Self, ConfigError> {
+        let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
+
+        let config = Config::builder()
+            .add_source(File::with_name("../market/config/default"))
+            .add_source(File::with_name(&format!("../market/config/{}", run_mode)).required(false))
+            .build()?;
+
+        println!("debug: {:?}", config.get_bool("debug"));
+        println!("database: {:?}", config.get::<String>("database.url"));
+
         config.try_deserialize()
     }
 }

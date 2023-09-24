@@ -71,7 +71,7 @@ pub async fn receive_webhook_alert(
     .execute(&app.db)
     .await?;
 
-    Ok((StatusCode::OK, Json::default()))
+    Ok((StatusCode::CREATED, Json::default()))
 }
 
 #[derive(Debug, Deserialize)]
@@ -79,15 +79,25 @@ pub struct BrokerQuery {
     broker: Broker,
 }
 
+pub async fn check_health(State(_app): State<Arc<App>>) -> Response<()> {
+    Ok((StatusCode::OK, Json::default()))
+}
+
 pub async fn get_account(
     State(app): State<Arc<App>>,
     Query(query): Query<BrokerQuery>,
 ) -> Response<Account> {
+    println!("abx");
+
     let client = match query.broker {
         Broker::Alpaca => &app.clients.alpaca,
     };
 
+    println!("reached");
+
     let account = client.get_account().await?;
+
+    println!("reached 1");
 
     Ok((StatusCode::OK, Json(account)))
 }
