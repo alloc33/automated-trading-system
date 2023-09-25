@@ -23,7 +23,7 @@ pub async fn receive_webhook_alert(
 ) -> Response<()> {
     let trade_signal = TradeSignal::from_alert_data(alert_data.0.clone(), &app.config)?;
 
-    let client = match &trade_signal.strategy.exchange {
+    let client = match &trade_signal.strategy.broker {
         Broker::Alpaca => Arc::clone(&app.clients.alpaca),
     };
 
@@ -88,14 +88,20 @@ impl BrokerQuery {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct AssetQuery {
-    symbol: String,
+pub struct AssetSymbolQuery {
+    pub symbol: Option<String>
 }
 
 #[derive(Debug, Deserialize)]
-pub enum AssetTypeQuery {
-    Crypto(String),
-    USStock(String),
+#[serde(rename_all = "snake_case")]
+pub enum AssetClassQuery {
+    Stock,
+    Crypto,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AssetTypeQuery {
+    asset_type: Option<AssetClassQuery>
 }
 
 pub async fn check_health(State(_app): State<Arc<App>>) -> Response<()> {
@@ -104,9 +110,9 @@ pub async fn check_health(State(_app): State<Arc<App>>) -> Response<()> {
 
 pub async fn get_account(
     State(app): State<Arc<App>>,
-    Query(exchange_query): Query<BrokerQuery>,
+    Query(broker): Query<BrokerQuery>,
 ) -> Response<Account> {
-    let client = exchange_query.client(&app);
+    let client = broker.client(&app);
 
     let account = client.get_account().await?;
 
@@ -115,15 +121,13 @@ pub async fn get_account(
 
 pub async fn get_assets(
     State(app): State<Arc<App>>,
-    Query(exchange_query): Query<BrokerQuery>,
+    Query(broker): Query<BrokerQuery>,
     Query(asset_type): Query<AssetTypeQuery>,
-    // Query(asset_query): Query<StockAssetQuery>,
+    Query(asset_symbol): Query<AssetSymbolQuery>,
 ) -> Response<()> {
-    let client = exchange_query.client(&app);
+    let client = broker.client(&app);
 
-    println!("asset_type: {:?}", asset_type);
-    // println!("asset_query: {:?}", asset_query);
-    println!("exchange_query: {:?}", exchange_query);
+    client.
 
     Ok((StatusCode::OK, Json::default()))
 }

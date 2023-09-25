@@ -8,7 +8,7 @@ pub struct Strategy {
     pub id: Uuid,
     pub name: String,
     pub enabled: bool,
-    pub exchange: Broker,
+    pub broker: Broker,
     pub max_order_retries: u8,
     pub order_retry_delay: f64,
 }

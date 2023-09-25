@@ -5,7 +5,7 @@ use apca::{api::v2::account, Client as AlpacaClient};
 use thiserror::Error as ThisError;
 
 use crate::{
-    api::objects::Account,
+    api::objects::{Account, Asset, AssetClass},
     strategy_manager::{Broker, Order},
 };
 
@@ -30,6 +30,7 @@ pub enum BrokerClientError {
 #[axum::async_trait]
 pub trait BrokerClient: Send + Sync {
     async fn get_account(&self) -> Result<Account, BrokerClientError>;
+    // async fn get_assets(&self, class: Option<AssetClass>) -> Result<Asset, BrokerClientError>;
     async fn get_positions(&self) -> Result<(), BrokerClientError>;
     async fn get_orders(&self) -> Result<(), BrokerClientError>;
     async fn place_order(
@@ -51,6 +52,9 @@ impl BrokerClient for Arc<AlpacaClient> {
 
         Ok(Account::AlpacaAccount(result))
     }
+    // async fn get_assets(&self, class: Option<AssetClass>) -> Result<Asset, BrokerClientError> {
+    //     Ok(Asset::AlpacaAsset)
+    // }
     async fn get_positions(&self) -> Result<(), BrokerClientError> {
         Ok(())
     }
