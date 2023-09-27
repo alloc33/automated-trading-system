@@ -69,6 +69,7 @@ pub fn build_routes(app_state: Arc<App>) -> Router {
     Router::new()
         .route("/webhook", post(handlers::receive_webhook_alert))
         .route("/account", get(handlers::get_account))
+        .route("/asset", get(handlers::get_asset))
         .route("/assets", get(handlers::get_assets))
         .route("/health", get(handlers::check_health))
         .layer(

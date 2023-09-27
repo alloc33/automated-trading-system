@@ -1,15 +1,17 @@
 use apca::api::v2::{account::Account as AlpacaAccount, asset::Asset as AlpacaAsset};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize)]
 pub enum Account {
     AlpacaAccount(AlpacaAccount),
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum AssetClass {
-    Crypto(Option<String>),
-    Stock(Option<String>)
+    #[serde(rename = "us_equity")]
+    UsEquity,
+    #[serde(rename = "crypto")]
+    Crypto,
 }
 
 #[derive(Debug, Serialize)]
