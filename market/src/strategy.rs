@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::strategy_manager::Broker;
+use crate::objects::Broker;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Strategy {

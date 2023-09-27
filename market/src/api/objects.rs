@@ -1,12 +1,35 @@
-use apca::api::v2::{account::Account as AlpacaAccount, asset::Asset as AlpacaAsset};
+use apca::api::v2::{
+    account::Account as AlpacaAccount, asset::Asset as AlpacaAsset, order::Order as AlpacaOrder,
+    orders::OrdersReq,
+};
 use serde::{Deserialize, Serialize};
+
+use crate::{clients::BrokerClient, App};
+
+pub trait GetBroker {
+    fn broker(&self) -> Broker;
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Broker {
+    Alpaca,
+}
+
+impl Broker {
+    pub fn get_client<'a>(&self, app: &'a App) -> &'a impl BrokerClient {
+        match self {
+            Broker::Alpaca => &app.clients.alpaca,
+        }
+    }
+}
 
 #[derive(Debug, Serialize)]
 pub enum Account {
     AlpacaAccount(AlpacaAccount),
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum AssetClass {
     #[serde(rename = "us_equity")]
     UsEquity,
@@ -14,7 +37,34 @@ pub enum AssetClass {
     Crypto,
 }
 
+impl From<AssetClass> for apca::api::v2::asset::Class {
+    fn from(value: AssetClass) -> Self {
+        match value {
+            AssetClass::UsEquity => apca::api::v2::asset::Class::UsEquity,
+            AssetClass::Crypto => apca::api::v2::asset::Class::Crypto,
+        }
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub enum Asset {
     AlpacaAsset(AlpacaAsset),
+}
+
+#[derive(Debug, Serialize)]
+pub enum Order {
+    AlpacaOrder(AlpacaOrder),
+}
+
+#[derive(Debug, Deserialize)]
+pub enum BrokerOrders {
+    AlpacaOrders(OrdersReq),
+}
+
+impl GetBroker for BrokerOrders {
+    fn broker(&self) -> Broker {
+        match self {
+            BrokerOrders::AlpacaOrders(_) => Broker::Alpaca,
+        }
+    }
 }

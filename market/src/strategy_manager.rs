@@ -25,18 +25,12 @@ pub async fn process_trade_signal(
     Ok(())
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Broker {
-    Alpaca,
-}
-
-#[derive(Debug)]
-pub struct Order {
-    pub id: Uuid,
-    pub ticker: String,
-    pub order_type: AlertType,
-}
+// #[derive(Debug)]
+// pub struct Order {
+//     pub id: Uuid,
+//     pub ticker: String,
+//     pub order_type: AlertType,
+// }
 
 #[derive(Debug, ThisError)]
 pub enum StrategyManagerError {
@@ -56,12 +50,12 @@ pub enum StrategyManagerError {
 pub enum TradeError {
     #[error("{0}")]
     InsufficientFunds(String),
-    #[error("Order max retries reached. {0}")]
-    MaxRetriesReached(Order),
+    // #[error("Order max retries reached. {0}")]
+    // MaxRetriesReached(Order),
 }
 
-impl std::fmt::Display for Order {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{ id: {} }}", self.id)
-    }
-}
+// impl std::fmt::Display for Order {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{{ id: {} }}", self.id)
+//     }
+// }

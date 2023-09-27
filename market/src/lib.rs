@@ -71,6 +71,9 @@ pub fn build_routes(app_state: Arc<App>) -> Router {
         .route("/account", get(handlers::get_account))
         .route("/asset", get(handlers::get_asset))
         .route("/assets", get(handlers::get_assets))
+        .route("/order/:id", get(handlers::get_order))
+        .route("/orders", post(handlers::get_orders))
+        .route("/positions", get(handlers::get_positions))
         .route("/health", get(handlers::check_health))
         .layer(
             ServiceBuilder::new()

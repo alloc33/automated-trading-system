@@ -2,14 +2,19 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use apca::{
-    api::v2::{account as apca_account, asset as apca_asset, assets as apca_assets},
-    Client as AlpacaClient,
+    api::v2::{
+        account as apca_account, asset as apca_asset, assets as apca_assets, order as apca_order,
+        orders as apca_orders,
+    },
+    Client as AlpacaClient, RequestError as AlpacaRequestError,
 };
 use thiserror::Error as ThisError;
+use uuid::Uuid;
 
 use crate::{
-    api::objects::{Account, Asset, AssetClass},
-    strategy_manager::{Broker, Order},
+    api::objects::{Account, Asset, AssetClass, BrokerOrders, Order},
+    objects::Broker,
+    // strategy_manager::Order,
 };
 
 pub struct Clients {
@@ -26,17 +31,23 @@ impl Clients {
 
 #[derive(Debug, ThisError)]
 pub enum BrokerClientError {
-    #[error("Alpaca error: {0}")]
-    AlpacaError(String),
+    #[error(transparent)]
+    AlpacaError(#[from] anyhow::Error),
 }
 
 #[axum::async_trait]
 pub trait BrokerClient: Send + Sync {
+    type OrdersRequest;
+
     async fn get_account(&self) -> Result<Account, BrokerClientError>;
     async fn get_asset(&self, symbol: String) -> Result<Asset, BrokerClientError>;
     async fn get_assets(&self, class: AssetClass) -> Result<Vec<Asset>, BrokerClientError>;
     async fn get_positions(&self) -> Result<(), BrokerClientError>;
-    async fn get_orders(&self) -> Result<(), BrokerClientError>;
+    async fn get_order(&self, order_id: Uuid) -> Result<Order, BrokerClientError>;
+    async fn get_orders(
+        &self,
+        brokder_orders: Self::OrdersRequest,
+    ) -> Result<Vec<Order>, BrokerClientError>;
     async fn place_order(&self, order: &Order, broker: &Broker) -> Result<(), BrokerClientError>;
     async fn cancel_order(&self) -> Result<(), BrokerClientError>;
     async fn cancel_all_orders(&self) -> Result<(), BrokerClientError>;
@@ -44,11 +55,12 @@ pub trait BrokerClient: Send + Sync {
 
 #[axum::async_trait]
 impl BrokerClient for Arc<AlpacaClient> {
+    type OrdersRequest = apca_orders::OrdersReq;
+
     async fn get_account(&self) -> Result<Account, BrokerClientError> {
-        let result = self.issue::<apca_account::Get>(&()).await.map_err(|e| {
-            dbg!(&e);
-            BrokerClientError::AlpacaError(e.to_string())
-        })?;
+        let result = self.issue::<apca_account::Get>(&()).await.unwrap();
+        // .map_err(|e| BrokerClientError::AlpacaError(e.to_string()))?;
+        // .map_err(|e| BrokerClientError::AlpacaError(e.to_string()))?;
 
         Ok(Account::AlpacaAccount(result))
     }
@@ -56,34 +68,61 @@ impl BrokerClient for Arc<AlpacaClient> {
         let result = self
             .issue::<apca_asset::Get>(&apca_asset::Symbol::Sym(symbol))
             .await
-            .map_err(|e| BrokerClientError::AlpacaError(e.to_string()))?;
+            .unwrap();
         Ok(Asset::AlpacaAsset(result))
     }
 
     async fn get_assets(&self, class: AssetClass) -> Result<Vec<Asset>, BrokerClientError> {
-        let class = match class {
-            AssetClass::UsEquity => apca_asset::Class::UsEquity,
-            AssetClass::Crypto => apca_asset::Class::Crypto,
-        };
-
         let asset_req = apca_assets::AssetsReq {
             status: apca_asset::Status::Active,
-            class,
+            class: class.into(),
         };
 
-        let result = self
-            .issue::<apca_assets::Get>(&asset_req)
-            .await
-            .map_err(|e| BrokerClientError::AlpacaError(e.to_string()))?;
+        let result = self.issue::<apca_assets::Get>(&asset_req).await.unwrap();
 
         Ok(result.into_iter().map(Asset::AlpacaAsset).collect())
     }
-
     async fn get_positions(&self) -> Result<(), BrokerClientError> {
         Ok(())
     }
-    async fn get_orders(&self) -> Result<(), BrokerClientError> {
-        Ok(())
+    async fn get_order(&self, order_id: Uuid) -> Result<Order, BrokerClientError> {
+        let result = self
+            .issue::<apca_order::Get>(&apca_order::Id(order_id))
+            .await
+            .map_err(|e| BrokerClientError::AlpacaError(e.into()));
+
+        dbg!(&result);
+
+        if let Err(error) = &result {
+            // let error_string = format!(":#?", error.to_string());
+            dbg!(error.to_string());
+        }
+
+        // if let Err(e) = &result {
+        //     match e {
+        //         BrokerClientError::AlpacaError(e) => match e.downcast_ref::<apca::ApiError>() {
+        //             Some(error) => {
+        //                 dbg!(&error);
+        //             }
+        //             None => {
+        //                 println!("sosi");
+        //             }
+        //         },
+        //     }
+        // }
+
+        Ok(Order::AlpacaOrder(result?))
+    }
+    async fn get_orders(
+        &self,
+        orders_request: Self::OrdersRequest,
+    ) -> Result<Vec<Order>, BrokerClientError> {
+        let orders = self
+            .issue::<apca_orders::Get>(&orders_request)
+            .await
+            .unwrap();
+
+        Ok(orders.into_iter().map(Order::AlpacaOrder).collect())
     }
 
     async fn place_order(&self, order: &Order, broker: &Broker) -> Result<(), BrokerClientError> {
