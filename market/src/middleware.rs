@@ -111,12 +111,10 @@ pub async fn log_response(
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?;
 
     let mut pretty_json = String::new();
-    if method != axum::http::Method::GET {
-        if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&bytes) {
-            pretty_json = serde_json::to_string_pretty(&json).unwrap_or_default();
-        } else {
-            pretty_json = String::from_utf8_lossy(&bytes).to_string();
-        }
+    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+        pretty_json = serde_json::to_string_pretty(&json).unwrap_or_default();
+    } else {
+        pretty_json = String::from_utf8_lossy(&bytes).to_string();
     }
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
@@ -154,7 +152,7 @@ pub async fn log_response(
         .unwrap();
     writeln!(&mut stdout, "{:#?}", parts.headers).unwrap();
 
-    // Log JSON body for non-GET requests
+    // Log JSON body
     if !pretty_json.is_empty() {
         stdout
             .set_color(ColorSpec::new().set_fg(Some(Color::White)))
