@@ -101,7 +101,6 @@ pub async fn log_response(
     request: Request<Body>,
     next: Next<Body>,
 ) -> Result<impl IntoResponse, Response> {
-    let method = request.method().clone();
     let response = next.run(request).await;
     let status = response.status();
 
@@ -110,7 +109,7 @@ pub async fn log_response(
         .await
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?;
 
-    let mut pretty_json = String::new();
+    let pretty_json: String;
     if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&bytes) {
         pretty_json = serde_json::to_string_pretty(&json).unwrap_or_default();
     } else {
