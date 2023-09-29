@@ -75,7 +75,7 @@ pub async fn receive_webhook_alert(
     .execute(&app.db)
     .await?;
 
-    Ok((StatusCode::CREATED, Json::default()))
+    Ok(Json::default())
 }
 
 #[derive(Debug, Deserialize)]
@@ -94,7 +94,7 @@ pub struct SymbolQuery {
 }
 
 pub async fn check_health(State(_app): State<Arc<App>>) -> Response<()> {
-    Ok((StatusCode::OK, Json::default()))
+    Ok(Json::default())
 }
 
 pub async fn get_account(
@@ -102,10 +102,7 @@ pub async fn get_account(
     Query(broker_query): Query<BrokerQuery>,
 ) -> Response<Account> {
     let client = broker_query.broker.get_client(&app);
-
-    let account = client.get_account().await?;
-
-    Ok((StatusCode::OK, Json(account)))
+    Ok(Json(client.get_account().await?))
 }
 
 pub async fn get_asset(
@@ -114,8 +111,7 @@ pub async fn get_asset(
     Query(symbol): Query<SymbolQuery>,
 ) -> Response<Asset> {
     let client = broker_query.broker.get_client(&app);
-    let asset = client.get_asset(symbol.symbol.to_uppercase()).await?;
-    Ok((StatusCode::OK, Json(asset)))
+    Ok(Json(client.get_asset(symbol.symbol.to_uppercase()).await?))
 }
 
 pub async fn get_assets(
@@ -124,8 +120,7 @@ pub async fn get_assets(
     Query(asset_type): Query<AssetTypeQuery>,
 ) -> Response<Vec<Asset>> {
     let client = broker_query.broker.get_client(&app);
-    let assets = client.get_assets(asset_type.class).await?;
-    Ok((StatusCode::OK, Json(assets)))
+    Ok(Json(client.get_assets(asset_type.class).await?))
 }
 
 pub async fn get_orders(
@@ -136,7 +131,7 @@ pub async fn get_orders(
         BrokerOrders::AlpacaOrders(req) => app.clients.alpaca.get_orders(req).await?,
     };
 
-    Ok((StatusCode::OK, Json(orders)))
+    Ok(Json(orders))
 }
 
 pub async fn get_order(
@@ -146,12 +141,12 @@ pub async fn get_order(
 ) -> Response<Order> {
     let client = broker_query.broker.get_client(&app);
     let order = client.get_order(id).await?;
-    Ok((StatusCode::OK, Json(order)))
+    Ok(Json(order))
 }
 
 pub async fn get_positions(
     State(app): State<Arc<App>>,
     Query(query): Query<BrokerQuery>,
 ) -> Response<()> {
-    Ok((StatusCode::OK, Json::default()))
+    Ok(Json::default())
 }

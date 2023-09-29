@@ -6,8 +6,8 @@ pub mod pagination;
 pub mod price;
 pub mod strategy;
 
-use axum::{http::StatusCode, Json};
+use axum::Json;
 
 use self::error::ApiError;
 
-pub type Response<T> = Result<(StatusCode, Json<T>), ApiError>;
+pub(crate) type Response<T> = Result<Json<T>, ApiError>;
