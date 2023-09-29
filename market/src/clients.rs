@@ -41,6 +41,7 @@ pub trait BrokerClient: Send + Sync {
     async fn get_account(&self) -> Result<Account, BrokerClientError>;
     async fn get_asset(&self, symbol: String) -> Result<Asset, BrokerClientError>;
     async fn get_assets(&self, class: AssetClass) -> Result<Vec<Asset>, BrokerClientError>;
+    async fn get_position(&self) -> Result<(), BrokerClientError>;
     async fn get_positions(&self) -> Result<(), BrokerClientError>;
     async fn get_order(&self, order_id: Uuid) -> Result<Order, BrokerClientError>;
     async fn get_orders(
@@ -91,6 +92,10 @@ impl BrokerClient for Arc<AlpacaClient> {
         } else {
             return Err(BrokerClientError::AlpacaError(format!("{result:?}")));
         }
+    }
+
+    async fn get_position(&self) -> Result<(), BrokerClientError> {
+        Ok(())
     }
 
     async fn get_positions(&self) -> Result<(), BrokerClientError> {
