@@ -31,8 +31,14 @@ impl Clients {
 
 #[derive(Debug, ThisError)]
 pub enum BrokerClientError {
-    #[error(transparent)]
-    AlpacaError(#[from] anyhow::Error),
+    #[error("Alpaca request error: {0}")]
+    AlpacaError(AlpacaError),
+}
+
+#[derive(Debug, ThisError)]
+pub enum AlpacaError {
+    #[error("{0}")]
+    GetOrderError(String),
 }
 
 #[axum::async_trait]
@@ -88,30 +94,15 @@ impl BrokerClient for Arc<AlpacaClient> {
     async fn get_order(&self, order_id: Uuid) -> Result<Order, BrokerClientError> {
         let result = self
             .issue::<apca_order::Get>(&apca_order::Id(order_id))
-            .await
-            .map_err(|e| BrokerClientError::AlpacaError(e.into()));
+            .await;
 
-        dbg!(&result);
-
-        if let Err(error) = &result {
-            // let error_string = format!(":#?", error.to_string());
-            dbg!(error.to_string());
+        if let Ok(order) = result {
+            return Ok(Order::AlpacaOrder(order));
+        } else {
+            return Err(BrokerClientError::AlpacaError(AlpacaError::GetOrderError(
+                format!("{:?}", result),
+            )));
         }
-
-        // if let Err(e) = &result {
-        //     match e {
-        //         BrokerClientError::AlpacaError(e) => match e.downcast_ref::<apca::ApiError>() {
-        //             Some(error) => {
-        //                 dbg!(&error);
-        //             }
-        //             None => {
-        //                 println!("sosi");
-        //             }
-        //         },
-        //     }
-        // }
-
-        Ok(Order::AlpacaOrder(result?))
     }
     async fn get_orders(
         &self,
