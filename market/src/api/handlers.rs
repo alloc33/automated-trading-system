@@ -147,10 +147,13 @@ pub async fn get_order(
 pub async fn update_order(
     State(app): State<Arc<App>>,
     WithRejection(order_update_req, _): WithRejection<Json<UpdateOrder>, ApiError>,
+    Path(id): Path<Uuid>,
 ) -> Response<Order> {
-    let client = broker_query.broker.get_client(&app);
-    let order = client.update_order(id, order_req.0).await?;
-    Ok(Json(order))
+    let updated_order = match order_update_req.0 {
+        UpdateOrder::AlpacaUpdateOrder(req) => app.clients.alpaca.update_order(id, req).await?,
+    };
+
+    Ok(Json(updated_order))
 }
 
 pub async fn get_positions(
