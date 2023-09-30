@@ -16,14 +16,6 @@ pub enum Broker {
     Alpaca,
 }
 
-impl Broker {
-    pub fn get_client<'a>(&self, app: &'a App) -> &'a impl BrokerClient {
-        match self {
-            Broker::Alpaca => &app.clients.alpaca,
-        }
-    }
-}
-
 #[derive(Debug, Serialize)]
 pub enum Account {
     AlpacaAccount(AlpacaAccount),
@@ -35,15 +27,6 @@ pub enum AssetClass {
     UsEquity,
     #[serde(rename = "crypto")]
     Crypto,
-}
-
-impl From<AssetClass> for apca::api::v2::asset::Class {
-    fn from(value: AssetClass) -> Self {
-        match value {
-            AssetClass::UsEquity => apca::api::v2::asset::Class::UsEquity,
-            AssetClass::Crypto => apca::api::v2::asset::Class::Crypto,
-        }
-    }
 }
 
 #[derive(Debug, Serialize)]
@@ -64,6 +47,23 @@ pub enum BrokerOrders {
 #[derive(Debug, Deserialize)]
 pub enum UpdateOrder {
     AlpacaUpdateOrder(AlpacaOrderUpdateReq),
+}
+
+impl From<AssetClass> for apca::api::v2::asset::Class {
+    fn from(value: AssetClass) -> Self {
+        match value {
+            AssetClass::UsEquity => apca::api::v2::asset::Class::UsEquity,
+            AssetClass::Crypto => apca::api::v2::asset::Class::Crypto,
+        }
+    }
+}
+
+impl Broker {
+    pub fn get_client<'a>(&self, app: &'a App) -> &'a impl BrokerClient {
+        match self {
+            Broker::Alpaca => &app.clients.alpaca,
+        }
+    }
 }
 
 impl GetBroker for BrokerOrders {

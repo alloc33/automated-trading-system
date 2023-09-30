@@ -58,6 +58,7 @@ pub trait BrokerClient: Send + Sync {
         order_id: Uuid,
         update_req: Self::OrderUdateRequest,
     ) -> Result<Order, BrokerClientError>;
+    async fn delete_order(&self, order_id: Uuid) -> Result<(), BrokerClientError>;
 }
 
 #[axum::async_trait]
@@ -138,12 +139,15 @@ impl BrokerClient for Arc<AlpacaClient> {
     async fn place_order(&self, order: &Order, broker: &Broker) -> Result<(), BrokerClientError> {
         Ok(())
     }
+
     async fn cancel_order(&self) -> Result<(), BrokerClientError> {
         Ok(())
     }
+
     async fn cancel_all_orders(&self) -> Result<(), BrokerClientError> {
         Ok(())
     }
+
     async fn update_order(
         &self,
         order_id: Uuid,
@@ -157,6 +161,17 @@ impl BrokerClient for Arc<AlpacaClient> {
             return Ok(Order::AlpacaOrder(order));
         } else {
             return Err(BrokerClientError::AlpacaError(format!("{result:?}")));
+        }
+    }
+
+    async fn delete_order(&self, order_id: Uuid) -> Result<(), BrokerClientError> {
+        let result = self
+            .issue::<apca_order::Delete>(&apca_order::Id(order_id))
+            .await;
+
+        match result {
+            Ok(_) => return Ok(()),
+            _ => return Err(BrokerClientError::AlpacaError(format!("{result:?}"))),
         }
     }
 }

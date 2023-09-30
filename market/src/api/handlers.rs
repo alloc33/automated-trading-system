@@ -156,6 +156,16 @@ pub async fn update_order(
     Ok(Json(updated_order))
 }
 
+pub async fn delete_order(
+    State(app): State<Arc<App>>,
+    Query(broker_query): Query<BrokerQuery>,
+    Path(id): Path<Uuid>,
+) -> Response<()> {
+    let client = broker_query.broker.get_client(&app);
+    client.delete_order(id).await?;
+    Ok(Json::default())
+}
+
 pub async fn get_positions(
     State(app): State<Arc<App>>,
     Query(query): Query<BrokerQuery>,
