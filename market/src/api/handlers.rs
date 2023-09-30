@@ -14,7 +14,7 @@ use uuid::Uuid;
 use super::{
     alert::TradeSignal,
     error::ApiError,
-    objects::{Account, Asset, AssetClass, Broker, BrokerOrders, GetBroker, Order},
+    objects::{Account, Asset, AssetClass, Broker, BrokerOrders, GetBroker, Order, UpdateOrder},
     Response,
 };
 use crate::{
@@ -93,7 +93,7 @@ pub struct SymbolQuery {
     symbol: String,
 }
 
-pub async fn check_health(State(_app): State<Arc<App>>) -> Response<()> {
+pub async fn check_health() -> Response<()> {
     Ok(Json::default())
 }
 
@@ -141,6 +141,15 @@ pub async fn get_order(
 ) -> Response<Order> {
     let client = broker_query.broker.get_client(&app);
     let order = client.get_order(id).await?;
+    Ok(Json(order))
+}
+
+pub async fn update_order(
+    State(app): State<Arc<App>>,
+    WithRejection(order_update_req, _): WithRejection<Json<UpdateOrder>, ApiError>,
+) -> Response<Order> {
+    let client = broker_query.broker.get_client(&app);
+    let order = client.update_order(id, order_req.0).await?;
     Ok(Json(order))
 }
 

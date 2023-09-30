@@ -3,7 +3,8 @@ use std::sync::Arc;
 use anyhow::Result;
 use apca::{
     api::v2::{
-        account as apca_account, asset as apca_asset, assets as apca_assets, order as apca_order,
+        account as apca_account, asset as apca_asset, assets as apca_assets,
+        order::{self as apca_order, Patch},
         orders as apca_orders,
     },
     Client as AlpacaClient,
@@ -37,6 +38,7 @@ pub enum BrokerClientError {
 #[axum::async_trait]
 pub trait BrokerClient: Send + Sync {
     type OrdersRequest;
+    type OrderUdateRequest;
 
     async fn get_account(&self) -> Result<Account, BrokerClientError>;
     async fn get_asset(&self, symbol: String) -> Result<Asset, BrokerClientError>;
@@ -51,11 +53,17 @@ pub trait BrokerClient: Send + Sync {
     async fn place_order(&self, order: &Order, broker: &Broker) -> Result<(), BrokerClientError>;
     async fn cancel_order(&self) -> Result<(), BrokerClientError>;
     async fn cancel_all_orders(&self) -> Result<(), BrokerClientError>;
+    async fn update_order(
+        &self,
+        order_id: Uuid,
+        update_req: Self::OrderUdateRequest,
+    ) -> Result<Order, BrokerClientError>;
 }
 
 #[axum::async_trait]
 impl BrokerClient for Arc<AlpacaClient> {
     type OrdersRequest = apca_orders::OrdersReq;
+    type OrderUdateRequest = apca_order::ChangeReq;
 
     async fn get_account(&self) -> Result<Account, BrokerClientError> {
         let result = self.issue::<apca_account::Get>(&()).await;
@@ -135,5 +143,20 @@ impl BrokerClient for Arc<AlpacaClient> {
     }
     async fn cancel_all_orders(&self) -> Result<(), BrokerClientError> {
         Ok(())
+    }
+    async fn update_order(
+        &self,
+        order_id: Uuid,
+        update_req: Self::OrderUdateRequest,
+    ) -> Result<Order, BrokerClientError> {
+        let result = self
+            .issue::<Patch>(&(apca_order::Id(order_id), update_req))
+            .await;
+
+        if let Ok(order) = result {
+            return Ok(Order::AlpacaOrder(order));
+        } else {
+            return Err(BrokerClientError::AlpacaError(format!("{result:?}")));
+        }
     }
 }

@@ -1,5 +1,5 @@
 use apca::api::v2::{
-    account::Account as AlpacaAccount, asset::Asset as AlpacaAsset, order::Order as AlpacaOrder,
+    account::Account as AlpacaAccount, asset::Asset as AlpacaAsset, order::{Order as AlpacaOrder, ChangeReq as AlpacaOrderUpdateReq},
     orders::OrdersReq,
 };
 use serde::{Deserialize, Serialize};
@@ -59,6 +59,11 @@ pub enum Order {
 #[derive(Debug, Deserialize)]
 pub enum BrokerOrders {
     AlpacaOrders(OrdersReq),
+}
+
+#[derive(Debug, Deserialize)]
+pub enum UpdateOrder {
+    AlpacaUpdateOrder(AlpacaOrderUpdateReq),
 }
 
 impl GetBroker for BrokerOrders {
