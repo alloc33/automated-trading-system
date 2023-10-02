@@ -140,7 +140,7 @@ pub async fn get_order(
     Path(id): Path<Uuid>,
 ) -> Response<Order> {
     let client = broker_query.broker.get_client(&app);
-    let order = client.get_order(id).await?;
+    let order = client.get_order_by_client_id(id.to_string()).await?;
     Ok(Json(order))
 }
 

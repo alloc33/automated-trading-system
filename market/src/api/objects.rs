@@ -1,5 +1,7 @@
 use apca::api::v2::{
-    account::Account as AlpacaAccount, asset::Asset as AlpacaAsset, order::{Order as AlpacaOrder, ChangeReq as AlpacaOrderUpdateReq},
+    account::Account as AlpacaAccount,
+    asset::Asset as AlpacaAsset,
+    order::{ChangeReq as AlpacaOrderUpdateReq, Order as AlpacaOrder},
     orders::OrdersReq,
 };
 use serde::{Deserialize, Serialize};
