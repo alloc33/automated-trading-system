@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 anyhow = { version = "1.0" }
 apca = { version = "0.27", optional = true }
-axum = { version = "0.6.16", features = ["tracing"] }
+axum = { version = "0.6", features = ["tracing", "macros"] }
 axum-extra = { version = "0.7.5", features = ["cookie"] }
 chrono = { version = "0.4.24", features = ["serde"] }
 config = { version = "0.13" }

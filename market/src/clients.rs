@@ -5,17 +5,14 @@ use apca::{
     api::v2::{
         account as apca_account, asset as apca_asset, assets as apca_assets,
         order::{self as apca_order, Patch},
-        orders as apca_orders,
+        orders as apca_orders, position as apca_position, positions as apca_positions,
     },
     Client as AlpacaClient,
 };
 use thiserror::Error as ThisError;
 use uuid::Uuid;
 
-use crate::{
-    api::objects::{Account, Asset, AssetClass, Order},
-    objects::Broker,
-};
+use crate::api::objects::{Account, Asset, AssetClass, Order, Position};
 
 pub struct Clients {
     pub alpaca: Arc<AlpacaClient>,
@@ -44,16 +41,18 @@ pub trait BrokerClient: Send + Sync {
     async fn get_account(&self) -> Result<Account, BrokerClientError>;
     async fn get_asset(&self, symbol: String) -> Result<Asset, BrokerClientError>;
     async fn get_assets(&self, class: AssetClass) -> Result<Vec<Asset>, BrokerClientError>;
-    async fn get_position(&self) -> Result<(), BrokerClientError>;
-    async fn get_positions(&self) -> Result<(), BrokerClientError>;
+    async fn get_position(&self, symbol: String) -> Result<Position, BrokerClientError>;
+    async fn get_positions(&self) -> Result<Vec<Position>, BrokerClientError>;
+    async fn delete_position(&self, symbol: String) -> Result<Order, BrokerClientError>;
     async fn get_order_by_client_id(&self, client_id: String) -> Result<Order, BrokerClientError>;
     async fn get_orders(
         &self,
         brokder_orders: Self::OrdersRequest,
     ) -> Result<Vec<Order>, BrokerClientError>;
-    async fn create_order(&self, new_order_req: Self::NewOrderRequest) -> Result<Order, BrokerClientError>;
-    async fn cancel_order(&self) -> Result<(), BrokerClientError>;
-    async fn delete_all_orders(&self) -> Result<(), BrokerClientError>;
+    async fn create_order(
+        &self,
+        new_order_req: Self::NewOrderRequest,
+    ) -> Result<Order, BrokerClientError>;
     async fn update_order(
         &self,
         order_id: Uuid,
@@ -105,12 +104,38 @@ impl BrokerClient for Arc<AlpacaClient> {
         }
     }
 
-    async fn get_position(&self) -> Result<(), BrokerClientError> {
-        Ok(())
+    async fn get_position(&self, symbol: String) -> Result<Position, BrokerClientError> {
+        let result = self
+            .issue::<apca_position::Get>(&apca_asset::Symbol::Sym(symbol))
+            .await;
+        if let Ok(position) = result {
+            return Ok(Position::AlpacaPosition(position));
+        } else {
+            return Err(BrokerClientError::AlpacaError(format!("{result:?}")));
+        }
     }
 
-    async fn get_positions(&self) -> Result<(), BrokerClientError> {
-        Ok(())
+    async fn get_positions(&self) -> Result<Vec<Position>, BrokerClientError> {
+        let result = self.issue::<apca_positions::Get>(&()).await;
+        if let Ok(positions) = result {
+            return Ok(positions
+                .into_iter()
+                .map(Position::AlpacaPosition)
+                .collect());
+        } else {
+            return Err(BrokerClientError::AlpacaError(format!("{result:?}")));
+        }
+    }
+
+    async fn delete_position(&self, symbol: String) -> Result<Order, BrokerClientError> {
+        let result = self
+            .issue::<apca_position::Delete>(&apca_asset::Symbol::Sym(symbol))
+            .await;
+        if let Ok(order) = result {
+            return Ok(Order::AlpacaOrder(order));
+        } else {
+            return Err(BrokerClientError::AlpacaError(format!("{result:?}")));
+        }
     }
 
     async fn get_order_by_client_id(&self, client_id: String) -> Result<Order, BrokerClientError> {
@@ -135,21 +160,16 @@ impl BrokerClient for Arc<AlpacaClient> {
         }
     }
 
-    async fn create_order(&self, new_order_req: Self::NewOrderRequest) -> Result<Order, BrokerClientError> {
+    async fn create_order(
+        &self,
+        new_order_req: Self::NewOrderRequest,
+    ) -> Result<Order, BrokerClientError> {
         let result = self.issue::<apca_order::Post>(&new_order_req).await;
         if let Ok(order) = result {
             return Ok(Order::AlpacaOrder(order));
         } else {
             return Err(BrokerClientError::AlpacaError(format!("{result:?}")));
         }
-    }
-
-    async fn cancel_order(&self) -> Result<(), BrokerClientError> {
-        Ok(())
-    }
-
-    async fn delete_all_orders(&self) -> Result<(), BrokerClientError> {
-        Ok(())
     }
 
     async fn update_order(

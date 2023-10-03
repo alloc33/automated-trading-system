@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use apca::api::v2::{order::OrderReq, orders::OrdersReq};
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
     Json,
 };
 use axum_extra::extract::WithRejection;
@@ -14,7 +12,9 @@ use uuid::Uuid;
 use super::{
     alert::TradeSignal,
     error::ApiError,
-    objects::{Account, Asset, AssetClass, Broker, BrokerOrders, GetBroker, Order, UpdateOrder},
+    objects::{
+        Account, Asset, AssetClass, Broker, NewOrder, Order, OrdersRequest, Position, UpdateOrder,
+    },
     Response,
 };
 use crate::{
@@ -88,11 +88,6 @@ pub struct AssetTypeQuery {
     class: AssetClass,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct SymbolQuery {
-    symbol: String,
-}
-
 pub async fn check_health() -> Response<()> {
     Ok(Json::default())
 }
@@ -108,10 +103,10 @@ pub async fn get_account(
 pub async fn get_asset(
     State(app): State<Arc<App>>,
     Query(broker_query): Query<BrokerQuery>,
-    Query(symbol): Query<SymbolQuery>,
+    Path(symbol): Path<String>,
 ) -> Response<Asset> {
     let client = broker_query.broker.get_client(&app);
-    Ok(Json(client.get_asset(symbol.symbol.to_uppercase()).await?))
+    Ok(Json(client.get_asset(symbol.to_uppercase()).await?))
 }
 
 pub async fn get_assets(
@@ -121,17 +116,6 @@ pub async fn get_assets(
 ) -> Response<Vec<Asset>> {
     let client = broker_query.broker.get_client(&app);
     Ok(Json(client.get_assets(asset_type.class).await?))
-}
-
-pub async fn get_orders(
-    State(app): State<Arc<App>>,
-    WithRejection(broker_orders, _): WithRejection<Json<BrokerOrders>, ApiError>,
-) -> Response<Vec<Order>> {
-    let orders: Vec<Order> = match broker_orders.0 {
-        BrokerOrders::AlpacaOrders(req) => app.clients.alpaca.get_orders(req).await?,
-    };
-
-    Ok(Json(orders))
 }
 
 pub async fn get_order(
@@ -144,10 +128,30 @@ pub async fn get_order(
     Ok(Json(order))
 }
 
+pub async fn get_orders(
+    State(app): State<Arc<App>>,
+    WithRejection(orders_req, _): WithRejection<Json<OrdersRequest>, ApiError>,
+) -> Response<Vec<Order>> {
+    let orders: Vec<Order> = match orders_req.0 {
+        OrdersRequest::AlpacaOrders(req) => app.clients.alpaca.get_orders(req).await?,
+    };
+    Ok(Json(orders))
+}
+
+pub async fn create_order(
+    State(app): State<Arc<App>>,
+    WithRejection(new_order_req, _): WithRejection<Json<NewOrder>, ApiError>,
+) -> Response<Order> {
+    let new_order = match new_order_req.0 {
+        NewOrder::AlpacaNewOrder(req) => app.clients.alpaca.create_order(req).await?,
+    };
+    Ok(Json(new_order))
+}
+
 pub async fn update_order(
+    Path(id): Path<Uuid>,
     State(app): State<Arc<App>>,
     WithRejection(order_update_req, _): WithRejection<Json<UpdateOrder>, ApiError>,
-    Path(id): Path<Uuid>,
 ) -> Response<Order> {
     let updated_order = match order_update_req.0 {
         UpdateOrder::AlpacaUpdateOrder(req) => app.clients.alpaca.update_order(id, req).await?,
@@ -166,9 +170,31 @@ pub async fn delete_order(
     Ok(Json::default())
 }
 
+pub async fn get_position(
+    State(app): State<Arc<App>>,
+    Path(symbol): Path<String>,
+    Query(query): Query<BrokerQuery>,
+) -> Response<Position> {
+    let client = query.broker.get_client(&app);
+    let position = client.get_position(symbol).await?;
+    Ok(Json(position))
+}
+
 pub async fn get_positions(
     State(app): State<Arc<App>>,
     Query(query): Query<BrokerQuery>,
-) -> Response<()> {
-    Ok(Json::default())
+) -> Response<Vec<Position>> {
+    let client = query.broker.get_client(&app);
+    let positions = client.get_positions().await?;
+    Ok(Json(positions))
+}
+
+pub async fn delete_position(
+    State(app): State<Arc<App>>,
+    Query(broker_query): Query<BrokerQuery>,
+    Path(symbol): Path<String>,
+) -> Response<Order> {
+    let client = broker_query.broker.get_client(&app);
+    let delete_position_order = client.delete_position(symbol).await?;
+    Ok(Json(delete_position_order))
 }

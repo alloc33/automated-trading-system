@@ -1,8 +1,9 @@
 use apca::api::v2::{
     account::Account as AlpacaAccount,
     asset::Asset as AlpacaAsset,
-    order::{ChangeReq as AlpacaOrderUpdateReq, Order as AlpacaOrder},
-    orders::OrdersReq,
+    order::{ChangeReq as AlpacaOrderUpdateReq, Order as AlpacaOrder, OrderReq as AlpacaNewOrder},
+    orders::OrdersReq as AlpacOrdersReq,
+    position::Position as AlpacaPosition,
 };
 use serde::{Deserialize, Serialize};
 
@@ -42,13 +43,23 @@ pub enum Order {
 }
 
 #[derive(Debug, Deserialize)]
-pub enum BrokerOrders {
-    AlpacaOrders(OrdersReq),
+pub enum OrdersRequest {
+    AlpacaOrders(AlpacOrdersReq),
+}
+
+#[derive(Debug, Deserialize)]
+pub enum NewOrder {
+    AlpacaNewOrder(AlpacaNewOrder),
 }
 
 #[derive(Debug, Deserialize)]
 pub enum UpdateOrder {
     AlpacaUpdateOrder(AlpacaOrderUpdateReq),
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum Position {
+    AlpacaPosition(AlpacaPosition),
 }
 
 impl From<AssetClass> for apca::api::v2::asset::Class {
@@ -68,10 +79,10 @@ impl Broker {
     }
 }
 
-impl GetBroker for BrokerOrders {
+impl GetBroker for OrdersRequest {
     fn broker(&self) -> Broker {
         match self {
-            BrokerOrders::AlpacaOrders(_) => Broker::Alpaca,
+            OrdersRequest::AlpacaOrders(_) => Broker::Alpaca,
         }
     }
 }

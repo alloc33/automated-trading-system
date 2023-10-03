@@ -12,7 +12,7 @@ use api::*;
 use app_config::AppConfig;
 use axum::{
     middleware::{from_fn, from_fn_with_state},
-    routing::{get, post},
+    routing::{delete, get, patch, post},
     Router,
 };
 use clients::Clients;
@@ -69,10 +69,20 @@ pub fn build_routes(app_state: Arc<App>) -> Router {
     Router::new()
         .route("/webhook", post(handlers::receive_webhook_alert))
         .route("/account", get(handlers::get_account))
-        .route("/asset", get(handlers::get_asset))
+        .route("/asset/:symbol", get(handlers::get_asset))
         .route("/assets", get(handlers::get_assets))
-        .route("/order/:id", get(handlers::get_order))
+        .route("/order", post(handlers::create_order))
         .route("/orders", post(handlers::get_orders))
+        .route(
+            "/order/:id",
+            get(handlers::get_order)
+                .patch(handlers::update_order)
+                .delete(handlers::delete_order),
+        )
+        .route(
+            "/position/:symbol",
+            get(handlers::get_position).delete(handlers::delete_position),
+        )
         .route("/positions", get(handlers::get_positions))
         .route("/health", get(handlers::check_health))
         .layer(
