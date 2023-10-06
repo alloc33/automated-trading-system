@@ -18,15 +18,17 @@ use axum::{
 };
 use clients::Clients;
 use sqlx::{postgres::PgConnectOptions, Error as SqlxError, PgPool};
+use strategy_manager::StrategyManager;
 use tower::ServiceBuilder;
 
 pub struct App {
     pub db: PgPool,
     pub clients: Arc<Clients>,
+    pub strategy_manager: StrategyManager,
     pub config: AppConfig,
 }
 
-pub async fn build_state(config: AppConfig, clients: Arc<Clients>) -> Result<App, SqlxError> {
+pub async fn build_app(config: AppConfig, clients: Arc<Clients>) -> Result<App, SqlxError> {
     let opts = config.database.url.parse::<PgConnectOptions>()?;
 
     let pool = sqlx::pool::PoolOptions::new()
@@ -48,6 +50,7 @@ pub async fn build_state(config: AppConfig, clients: Arc<Clients>) -> Result<App
     let app = App {
         db: pool,
         clients,
+        strategy_manager: StrategyManager,
         config,
     };
 

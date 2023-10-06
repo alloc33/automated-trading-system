@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use market::{app_config::AppConfig, build_clients, build_routes, build_state, App};
+use market::{app_config::AppConfig, build_clients, build_routes, build_app, App};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -18,14 +18,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let clients = build_clients(&config)?;
 
     // Build app state
-    let state: Arc<App> = build_state(config, clients).await?.into();
+    let app: Arc<App> = build_app(config, clients).await?.into();
 
     // Start server
-    let app = build_routes(state);
+    let routes = build_routes(app);
     let addr = SocketAddr::from((Ipv4Addr::new(0, 0, 0, 0), 8000));
     tracing::info!("Listening on {}", addr);
     axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+        .serve(routes.into_make_service())
         .await?;
 
     Ok(())
