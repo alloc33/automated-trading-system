@@ -90,6 +90,10 @@ impl Broker {
             Broker::Alpaca => &app.clients.alpaca,
         }
     }
+
+    pub async fn create_order_request(&self) -> Result<(), ()> {
+        Ok(())
+    }
 }
 
 impl GetBroker for OrdersRequest {

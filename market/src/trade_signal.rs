@@ -23,7 +23,13 @@ pub struct TradeSignal {
 
 impl TradeSignal {
     pub async fn process(&self, client: impl BrokerClient) -> Result<(), ()> {
+        let broker = &self.strategy.broker;
+        let order_request = broker.create_order_request().await;
+
+        // let order = client.create_order(new_order_req)
+
         Ok(())
+
     }
 
     pub fn from_alert_data(
