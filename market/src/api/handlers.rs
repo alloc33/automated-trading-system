@@ -10,17 +10,14 @@ use tracing::error;
 use uuid::Uuid;
 
 use super::{
-    alert::TradeSignal,
     error::ApiError,
     objects::{
-        Account, ActivitiesRequest, Activity, Asset, AssetClass, Broker, Order,
-        OrdersRequest, Position,
+        Account, ActivitiesRequest, Activity, Asset, AssetClass, Broker, Order, OrdersRequest,
+        Position,
     },
     Response,
 };
-use crate::{
-    alert::WebhookAlertData, clients::BrokerClient, strategy_manager::process_trade_signal, App,
-};
+use crate::{alert::WebhookAlertData, clients::BrokerClient, trade_signal::TradeSignal, App};
 
 pub async fn receive_webhook_alert(
     State(app): State<Arc<App>>,
@@ -32,8 +29,8 @@ pub async fn receive_webhook_alert(
         Broker::Alpaca => Arc::clone(&app.clients.alpaca),
     };
 
-    tokio::spawn(async {
-        if let Err(err) = process_trade_signal(client, trade_signal).await {
+    tokio::spawn(async move {
+        if let Err(err) = trade_signal.process(client).await {
             error!("Failed to process trade signal, error: {:?}", err);
         };
     });
@@ -157,11 +154,8 @@ pub async fn get_orders(
 // pub async fn create_order(
 //     State(app): State<Arc<App>>,
 //     WithRejection(new_order_req, _): WithRejection<Json<NewOrder>, ApiError>,
-// ) -> Response<Order> {
-//     let new_order = match new_order_req.0 {
-//         NewOrder::AlpacaNewOrder(req) => app.clients.alpaca.create_order(req).await?,
-//     };
-//     Ok(Json(new_order))
+// ) -> Response<Order> { let new_order = match new_order_req.0 { NewOrder::AlpacaNewOrder(req) =>
+//   app.clients.alpaca.create_order(req).await?, }; Ok(Json(new_order))
 // }
 
 // NOTE: Algorithmically update orders
@@ -169,11 +163,9 @@ pub async fn get_orders(
 //     Path(id): Path<Uuid>,
 //     State(app): State<Arc<App>>,
 //     WithRejection(order_update_req, _): WithRejection<Json<UpdateOrder>, ApiError>,
-// ) -> Response<Order> {
-//     let updated_order = match order_update_req.0 {
-//         UpdateOrder::AlpacaUpdateOrder(req) => app.clients.alpaca.update_order(id, req).await?,
-//     };
-//     Ok(Json(updated_order))
+// ) -> Response<Order> { let updated_order = match order_update_req.0 {
+//   UpdateOrder::AlpacaUpdateOrder(req) => app.clients.alpaca.update_order(id, req).await?, };
+//   Ok(Json(updated_order))
 // }
 
 // NOTE: Algorithmically delete orders
@@ -181,10 +173,8 @@ pub async fn get_orders(
 //     State(app): State<Arc<App>>,
 //     Query(broker_query): Query<BrokerQuery>,
 //     Path(id): Path<Uuid>,
-// ) -> Response<()> {
-//     let client = broker_query.broker.get_client(&app);
-//     client.delete_order(id).await?;
-//     Ok(Json::default())
+// ) -> Response<()> { let client = broker_query.broker.get_client(&app);
+//   client.delete_order(id).await?; Ok(Json::default())
 // }
 
 pub async fn get_position(

@@ -4,6 +4,7 @@ pub mod clients;
 pub mod middleware;
 pub mod strategy;
 pub mod strategy_manager;
+pub mod trade_signal;
 
 use std::{error::Error, sync::Arc, time::Duration};
 

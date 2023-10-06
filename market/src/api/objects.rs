@@ -6,7 +6,6 @@ use apca::api::v2::{
     orders::OrdersReq as AlpacOrdersReq,
     position::Position as AlpacaPosition,
 };
-
 use serde::{Deserialize, Serialize};
 
 use crate::{clients::BrokerClient, App};
