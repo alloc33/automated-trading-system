@@ -69,20 +69,21 @@ pub fn build_routes(app_state: Arc<App>) -> Router {
     Router::new()
         .route("/webhook", post(handlers::receive_webhook_alert))
         .route("/account", get(handlers::get_account))
-        .route("/asset/:symbol", get(handlers::get_asset))
-        .route("/assets", get(handlers::get_assets))
-        .route("/order", post(handlers::create_order))
+        .route("/activities", post(handlers::get_activities))
+        // .route("/asset/:symbol", get(handlers::get_asset)) // NOTE: Algorithmically get assets
+        // .route("/assets", get(handlers::get_assets)) // NOTE: Algorithmically get assets
+        // .route("/order", post(handlers::create_order)) // NOTE: Alogrithmically create orders
         .route("/orders", post(handlers::get_orders))
         .route(
             "/order/:id",
             get(handlers::get_order)
-                .patch(handlers::update_order)
-                .delete(handlers::delete_order),
+                // .patch(handlers::update_order) // NOTE: Alogrithmically update orders
+                // .delete(handlers::delete_order), // NOTE: Alogrithmically delete orders
         )
-        .route(
-            "/position/:symbol",
-            get(handlers::get_position).delete(handlers::delete_position),
-        )
+        // .route(
+        //     "/position/:symbol",
+        //     get(handlers::get_position).delete(handlers::delete_position),
+        // ) // NOTE: Get specific position algorithmically
         .route("/positions", get(handlers::get_positions))
         .route("/health", get(handlers::check_health))
         .layer(

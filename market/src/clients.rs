@@ -3,7 +3,8 @@ use std::sync::Arc;
 use anyhow::Result;
 use apca::{
     api::v2::{
-        account as apca_account, asset as apca_asset, assets as apca_assets,
+        account as apca_account, account_activities as apca_activities, asset as apca_asset,
+        assets as apca_assets,
         order::{self as apca_order, Patch},
         orders as apca_orders, position as apca_position, positions as apca_positions,
     },
@@ -12,7 +13,7 @@ use apca::{
 use thiserror::Error as ThisError;
 use uuid::Uuid;
 
-use crate::api::objects::{Account, Asset, AssetClass, Order, Position};
+use crate::api::objects::{Account, Activity, Asset, AssetClass, Order, Position};
 
 pub struct Clients {
     pub alpaca: Arc<AlpacaClient>,
@@ -34,11 +35,16 @@ pub enum BrokerClientError {
 
 #[axum::async_trait]
 pub trait BrokerClient: Send + Sync {
+    type ActivitiesRequest;
     type NewOrderRequest;
     type OrdersRequest;
     type OrderUdateRequest;
 
     async fn get_account(&self) -> Result<Account, BrokerClientError>;
+    async fn get_activities(
+        &self,
+        activities_req: Self::ActivitiesRequest,
+    ) -> Result<Vec<Activity>, BrokerClientError>;
     async fn get_asset(&self, symbol: String) -> Result<Asset, BrokerClientError>;
     async fn get_assets(&self, class: AssetClass) -> Result<Vec<Asset>, BrokerClientError>;
     async fn get_position(&self, symbol: String) -> Result<Position, BrokerClientError>;
@@ -47,7 +53,7 @@ pub trait BrokerClient: Send + Sync {
     async fn get_order_by_client_id(&self, client_id: String) -> Result<Order, BrokerClientError>;
     async fn get_orders(
         &self,
-        brokder_orders: Self::OrdersRequest,
+        orders_req: Self::OrdersRequest,
     ) -> Result<Vec<Order>, BrokerClientError>;
     async fn create_order(
         &self,
@@ -63,6 +69,7 @@ pub trait BrokerClient: Send + Sync {
 
 #[axum::async_trait]
 impl BrokerClient for Arc<AlpacaClient> {
+    type ActivitiesRequest = apca_activities::ActivityReq;
     type NewOrderRequest = apca_order::OrderReq;
     type OrdersRequest = apca_orders::OrdersReq;
     type OrderUdateRequest = apca_order::ChangeReq;
@@ -72,6 +79,21 @@ impl BrokerClient for Arc<AlpacaClient> {
 
         if let Ok(account) = result {
             return Ok(Account::AlpacaAccount(account));
+        } else {
+            return Err(BrokerClientError::AlpacaError(format!("{result:?}")));
+        }
+    }
+
+    async fn get_activities(
+        &self,
+        activities_req: Self::ActivitiesRequest,
+    ) -> Result<Vec<Activity>, BrokerClientError> {
+        let result = self.issue::<apca_activities::Get>(&activities_req).await;
+        if let Ok(activities) = result {
+            return Ok(activities
+                .into_iter()
+                .map(Activity::AlpacaActivity)
+                .collect());
         } else {
             return Err(BrokerClientError::AlpacaError(format!("{result:?}")));
         }

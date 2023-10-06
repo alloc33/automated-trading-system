@@ -1,10 +1,12 @@
 use apca::api::v2::{
     account::Account as AlpacaAccount,
+    account_activities::{Activity as AlpacaActivity, ActivityReq as AlpacaActivitiesReq},
     asset::Asset as AlpacaAsset,
     order::{ChangeReq as AlpacaOrderUpdateReq, Order as AlpacaOrder, OrderReq as AlpacaNewOrder},
     orders::OrdersReq as AlpacOrdersReq,
     position::Position as AlpacaPosition,
 };
+
 use serde::{Deserialize, Serialize};
 
 use crate::{clients::BrokerClient, App};
@@ -24,7 +26,17 @@ pub enum Account {
     AlpacaAccount(AlpacaAccount),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
+pub enum ActivitiesRequest {
+    AlpacaActivitiesReq(AlpacaActivitiesReq),
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum Activity {
+    AlpacaActivity(AlpacaActivity),
+}
+
+#[derive(Debug, Deserialize)]
 pub enum AssetClass {
     #[serde(rename = "us_equity")]
     UsEquity,
@@ -47,15 +59,17 @@ pub enum OrdersRequest {
     AlpacaOrders(AlpacOrdersReq),
 }
 
-#[derive(Debug, Deserialize)]
-pub enum NewOrder {
-    AlpacaNewOrder(AlpacaNewOrder),
-}
+// NOTE: Algorithmically create orders
+// #[derive(Debug, Deserialize)]
+// pub enum NewOrder {
+//     AlpacaNewOrder(AlpacaNewOrder),
+// }
 
-#[derive(Debug, Deserialize)]
-pub enum UpdateOrder {
-    AlpacaUpdateOrder(AlpacaOrderUpdateReq),
-}
+// NOTE: Algorithmically update orders
+// #[derive(Debug, Deserialize)]
+// pub enum UpdateOrder {
+//     AlpacaUpdateOrder(AlpacaOrderUpdateReq),
+// }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub enum Position {

@@ -13,7 +13,8 @@ use super::{
     alert::TradeSignal,
     error::ApiError,
     objects::{
-        Account, Asset, AssetClass, Broker, NewOrder, Order, OrdersRequest, Position, UpdateOrder,
+        Account, ActivitiesRequest, Activity, Asset, AssetClass, Broker, Order,
+        OrdersRequest, Position,
     },
     Response,
 };
@@ -100,6 +101,20 @@ pub async fn get_account(
     Ok(Json(client.get_account().await?))
 }
 
+#[axum::debug_handler]
+pub async fn get_activities(
+    State(app): State<Arc<App>>,
+    WithRejection(activities_req, _): WithRejection<Json<ActivitiesRequest>, ApiError>,
+) -> Response<Vec<Activity>> {
+    let activities: Vec<Activity> = match activities_req.0 {
+        ActivitiesRequest::AlpacaActivitiesReq(req) => {
+            app.clients.alpaca.get_activities(req).await?
+        }
+    };
+
+    Ok(Json(activities))
+}
+
 pub async fn get_asset(
     State(app): State<Arc<App>>,
     Query(broker_query): Query<BrokerQuery>,
@@ -138,37 +153,39 @@ pub async fn get_orders(
     Ok(Json(orders))
 }
 
-pub async fn create_order(
-    State(app): State<Arc<App>>,
-    WithRejection(new_order_req, _): WithRejection<Json<NewOrder>, ApiError>,
-) -> Response<Order> {
-    let new_order = match new_order_req.0 {
-        NewOrder::AlpacaNewOrder(req) => app.clients.alpaca.create_order(req).await?,
-    };
-    Ok(Json(new_order))
-}
+// NOTE: Algorithmically create orders
+// pub async fn create_order(
+//     State(app): State<Arc<App>>,
+//     WithRejection(new_order_req, _): WithRejection<Json<NewOrder>, ApiError>,
+// ) -> Response<Order> {
+//     let new_order = match new_order_req.0 {
+//         NewOrder::AlpacaNewOrder(req) => app.clients.alpaca.create_order(req).await?,
+//     };
+//     Ok(Json(new_order))
+// }
 
-pub async fn update_order(
-    Path(id): Path<Uuid>,
-    State(app): State<Arc<App>>,
-    WithRejection(order_update_req, _): WithRejection<Json<UpdateOrder>, ApiError>,
-) -> Response<Order> {
-    let updated_order = match order_update_req.0 {
-        UpdateOrder::AlpacaUpdateOrder(req) => app.clients.alpaca.update_order(id, req).await?,
-    };
+// NOTE: Algorithmically update orders
+// pub async fn update_order(
+//     Path(id): Path<Uuid>,
+//     State(app): State<Arc<App>>,
+//     WithRejection(order_update_req, _): WithRejection<Json<UpdateOrder>, ApiError>,
+// ) -> Response<Order> {
+//     let updated_order = match order_update_req.0 {
+//         UpdateOrder::AlpacaUpdateOrder(req) => app.clients.alpaca.update_order(id, req).await?,
+//     };
+//     Ok(Json(updated_order))
+// }
 
-    Ok(Json(updated_order))
-}
-
-pub async fn delete_order(
-    State(app): State<Arc<App>>,
-    Query(broker_query): Query<BrokerQuery>,
-    Path(id): Path<Uuid>,
-) -> Response<()> {
-    let client = broker_query.broker.get_client(&app);
-    client.delete_order(id).await?;
-    Ok(Json::default())
-}
+// NOTE: Algorithmically delete orders
+// pub async fn delete_order(
+//     State(app): State<Arc<App>>,
+//     Query(broker_query): Query<BrokerQuery>,
+//     Path(id): Path<Uuid>,
+// ) -> Response<()> {
+//     let client = broker_query.broker.get_client(&app);
+//     client.delete_order(id).await?;
+//     Ok(Json::default())
+// }
 
 pub async fn get_position(
     State(app): State<Arc<App>>,

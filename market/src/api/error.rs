@@ -119,7 +119,7 @@ impl IntoResponse for ApiError {
         };
 
         let body = Json(serde_json::json!({
-            "error": error_message,
+            "Error": error_message,
         }));
 
         (status, body).into_response()
