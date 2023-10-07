@@ -5,7 +5,7 @@ use axum::{
     http::{method::Method, Request},
 };
 use market::api::{
-    alert::{AlertType, BarData, WebhookAlertData},
+    alert::{SignalType, BarData, WebhookAlertData},
     price::Price,
 };
 use pretty_assertions::assert_eq;
@@ -26,8 +26,8 @@ pub(crate) async fn webhook(pool: PgPool) {
         ticker: "AAPL".to_string(),
         timeframe: "5m".to_string(),
         exchange: "NASDAQ".to_string(),
-        alert_type: AlertType::Long,
-        bar: BarData {
+        signal_type: SignalType::OpenLong,
+        bar_data: BarData {
             time: chrono::Utc::now(),
             open: Price::new(Decimal::new(17655, 2)),
             high: Price::new(Decimal::new(17658, 2)),

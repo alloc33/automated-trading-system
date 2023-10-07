@@ -37,43 +37,43 @@ pub async fn receive_webhook_alert(
 
     // app.strategy_manager.
 
-    _ = sqlx::query!(
-        r#"
-        INSERT INTO alerts (
-            alert_id,
-            ticker,
-            timeframe,
-            exchange, 
-            alert_type,
-            bar_time,
-            bar_open,
-            bar_high,
-            bar_low,
-            bar_close,
-            bar_volume,
-            alert_fire_time,
-            created_at,
-            modified_at
-        )
-        VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
-        )
-        "#,
-        uuid7::new_v7(),
-        alert_data.ticker,
-        alert_data.timeframe,
-        alert_data.exchange,
-        alert_data.alert_type.as_ref(),
-        alert_data.bar.time,
-        alert_data.bar.open.as_ref(),
-        alert_data.bar.high.as_ref(),
-        alert_data.bar.low.as_ref(),
-        alert_data.bar.close.as_ref(),
-        alert_data.bar.volume,
-        alert_data.time
-    )
-    .execute(&app.db)
-    .await?;
+    // _ = sqlx::query!(
+    //     r#"
+    //     INSERT INTO alerts (
+    //         alert_id,
+    //         ticker,
+    //         timeframe,
+    //         exchange, 
+    //         alert_type,
+    //         bar_time,
+    //         bar_open,
+    //         bar_high,
+    //         bar_low,
+    //         bar_close,
+    //         bar_volume,
+    //         alert_fire_time,
+    //         created_at,
+    //         modified_at
+    //     )
+    //     VALUES (
+    //         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
+    //     )
+    //     "#,
+    //     uuid7::new_v7(),
+    //     alert_data.ticker,
+    //     alert_data.timeframe,
+    //     alert_data.exchange,
+    //     alert_data.signal_type.as_ref(),
+    //     alert_data.bar_data.time,
+    //     alert_data.bar_data.open.as_ref(),
+    //     alert_data.bar_data.high.as_ref(),
+    //     alert_data.bar_data.low.as_ref(),
+    //     alert_data.bar_data.close.as_ref(),
+    //     alert_data.bar_data.volume,
+    //     alert_data.time
+    // )
+    // .execute(&app.db)
+    // .await?;
 
     Ok(Json::default())
 }

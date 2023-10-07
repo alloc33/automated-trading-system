@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 
 use crate::{
     api::{
-        alert::{AlertType, BarData, WebhookAlertData},
+        alert::{SignalType, BarData, WebhookAlertData, SignalData},
         error::ApiError,
     },
     app_config::AppConfig,
@@ -16,8 +16,8 @@ pub struct TradeSignal {
     pub ticker: String,
     pub timeframe: String,
     pub exchange: String,
-    pub alert_type: AlertType,
-    pub bar: BarData,
+    pub signal_data: SignalData,
+    pub bar_data: BarData,
     pub time: DateTime<Utc>,
 }
 
@@ -52,8 +52,8 @@ impl TradeSignal {
             ticker: alert_data.ticker,
             timeframe: alert_data.timeframe,
             exchange: alert_data.exchange,
-            alert_type: alert_data.alert_type,
-            bar: alert_data.bar,
+            signal_data: alert_data.signal_data,
+            bar_data: alert_data.bar_data,
             time: alert_data.time,
         })
     }

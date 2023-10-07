@@ -30,19 +30,26 @@ pub struct WebhookAlertData {
     pub ticker: String,
     pub timeframe: String,
     pub exchange: String,
-    #[serde(rename = "type")]
-    pub alert_type: AlertType,
-    pub bar: BarData,
+    pub signal_data: SignalData,
+    pub bar_data: BarData,
     pub time: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, EnumString, AsRefStr)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
-pub enum AlertType {
-    Long,
-    Short,
-    StopLoss,
+/// Signal type to receive from TradingView.
+/// Take profits are being calculated on the server side.
+pub enum SignalType {
+    OpenLong,
+    OpenShort,
+    StopLossUpdate,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SignalData {
+    pub sygnal_type: SignalType,
+    pub trail_stop_price: Option<Decimal>
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -14,7 +14,7 @@ use uuid7::uuid7;
 
 use crate::{
     api::{
-        alert::{AlertType, WebhookAlertData},
+        alert::{SignalType, WebhookAlertData},
         objects::Broker,
     },
     clients::{BrokerClient, Clients},
@@ -37,6 +37,11 @@ impl Core {
     ) -> Result<(), ()> {
         // let order_request = client.create_order_request
         // let order = client.create_order(new_order_req);
+        // match trade_signal.signal_type {
+        //     SignalType::OpenLong => {}
+        //     SignalType::OpenShort => {}
+        //     SignalType::StopLossUpdate => {}
+        // };
         Ok(())
     }
 
