@@ -35,7 +35,7 @@ pub struct WebhookAlertData {
     pub time: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, EnumString, AsRefStr)]
+#[derive(Debug, Clone, Serialize, AsRefStr)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 /// Signal type to receive from TradingView.
@@ -46,13 +46,49 @@ pub enum SignalType {
     StopLossUpdate(TrailStopPrice),
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TrailStopPrice(pub Decimal);
+
+impl<'de> Deserialize<'de> for TrailStopPrice {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let decimal = Decimal::deserialize(deserializer)?;
+        Ok(TrailStopPrice(decimal))
+    }
+}
+
+impl<'de> Deserialize<'de> for SignalType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct SignalTypeWrapper {
+            #[serde(rename = "signal_type")]
+            signal_type: String,
+            trail_stop_price: TrailStopPrice,
+        }
+
+        let value = SignalTypeWrapper::deserialize(deserializer)?;
+
+        match value.signal_type.as_str() {
+            "open_long" => Ok(SignalType::OpenLong(value.trail_stop_price)),
+            "open_short" => Ok(SignalType::OpenShort(value.trail_stop_price)),
+            "stop_loss_update" => Ok(SignalType::StopLossUpdate(value.trail_stop_price)),
+            _ => Err(serde::de::Error::unknown_variant(
+                &value.signal_type,
+                &["open_long", "open_short", "stop_loss_update"],
+            )),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SignalData {
     pub signal_type: SignalType,
-    pub trail_stop_price: Option<Decimal>
+    pub trail_stop_price: Option<Decimal>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
