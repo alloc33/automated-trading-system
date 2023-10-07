@@ -41,14 +41,17 @@ pub struct WebhookAlertData {
 /// Signal type to receive from TradingView.
 /// Take profits are being calculated on the server side.
 pub enum SignalType {
-    OpenLong,
-    OpenShort,
-    StopLossUpdate,
+    OpenLong(TrailStopPrice),
+    OpenShort(TrailStopPrice),
+    StopLossUpdate(TrailStopPrice),
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TrailStopPrice(pub Decimal);
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SignalData {
-    pub sygnal_type: SignalType,
+    pub signal_type: SignalType,
     pub trail_stop_price: Option<Decimal>
 }
 
