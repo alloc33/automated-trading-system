@@ -23,20 +23,19 @@ pub async fn receive_webhook_alert(
     State(app): State<Arc<App>>,
     WithRejection(alert_data, _): WithRejection<Json<WebhookAlertData>, ApiError>,
 ) -> Response<()> {
-    let strategy_manager = Arc::clone(&app.strategy_manager);
     let trade_signal = TradeSignal::from_alert_data(alert_data.0.clone(), &app.config)?;
+    let core = Arc::clone(&app.core);
+    let client = match &trade_signal.strategy.broker {
+        Broker::Alpaca => Arc::clone(&app.clients.alpaca),
+    };
 
     tokio::spawn(async move {
-        if let Err(err) = strategy_manager.process_trade_signal(trade_signal).await {
+        if let Err(err) = core.process_trade_signal(client, trade_signal).await {
             error!("Failed to process trade signal, error: {:?}", err);
         };
     });
 
     // app.strategy_manager.
-
-    // let client = match &trade_signal.strategy.broker {
-    //     Broker::Alpaca => Arc::clone(&app.clients.alpaca),
-    // };
 
     _ = sqlx::query!(
         r#"

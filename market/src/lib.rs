@@ -3,7 +3,7 @@ pub mod app_config;
 pub mod clients;
 pub mod middleware;
 pub mod strategy;
-pub mod strategy_manager;
+pub mod core;
 pub mod trade_signal;
 
 use std::{error::Error, sync::Arc, time::Duration};
@@ -18,13 +18,13 @@ use axum::{
 };
 use clients::Clients;
 use sqlx::{postgres::PgConnectOptions, Error as SqlxError, PgPool};
-use strategy_manager::StrategyManager;
+use core::Core;
 use tower::ServiceBuilder;
 
 pub struct App {
     pub db: PgPool,
     pub clients: Arc<Clients>,
-    pub strategy_manager: Arc<StrategyManager>,
+    pub core: Arc<Core>,
     pub config: AppConfig,
 }
 
@@ -50,7 +50,7 @@ pub async fn build_app(config: AppConfig, clients: Arc<Clients>) -> Result<App, 
     let app = App {
         db: pool,
         clients,
-        strategy_manager: Arc::new(StrategyManager),
+        core: Arc::new(Core),
         config,
     };
 

@@ -13,20 +13,34 @@ use uuid::Uuid;
 use uuid7::uuid7;
 
 use crate::{
-    api::{alert::{AlertType, WebhookAlertData}, objects::Broker},
+    api::{
+        alert::{AlertType, WebhookAlertData},
+        objects::Broker,
+    },
     clients::{BrokerClient, Clients},
-    App, trade_signal::TradeSignal,
+    trade_signal::TradeSignal,
+    App,
 };
 
-pub struct StrategyManager;
+pub struct Core;
 
-impl StrategyManager {
+impl Core {
     // NOTE: ?scheduled tasks
     pub async fn run(&self) -> Result<(), anyhow::Error> {
         Ok(())
     }
 
-    pub async fn process_trade_signal(&self, trade_signal: TradeSignal) -> Result<(), ()> {
+    pub async fn process_trade_signal<C: BrokerClient>(
+        &self,
+        client: C,
+        trade_signal: TradeSignal,
+    ) -> Result<(), ()> {
+        // let order_request = client.create_order_request
+        // let order = client.create_order(new_order_req);
+        Ok(())
+    }
+
+    async fn order_request(&self, broker: Broker) -> Result<(), ()> {
         Ok(())
     }
 }
