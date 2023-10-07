@@ -29,10 +29,6 @@ impl StrategyManager {
     pub async fn process_trade_signal(&self, trade_signal: TradeSignal) -> Result<(), ()> {
         Ok(())
     }
-
-    async fn create_order_request(&self, broker: Broker) -> Result<BrokerClient::OrdersRequest, ()> {
-        todo!();
-    }
 }
 
 // #[derive(Debug)]

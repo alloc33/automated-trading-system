@@ -24,7 +24,7 @@ use tower::ServiceBuilder;
 pub struct App {
     pub db: PgPool,
     pub clients: Arc<Clients>,
-    pub strategy_manager: StrategyManager,
+    pub strategy_manager: Arc<StrategyManager>,
     pub config: AppConfig,
 }
 
@@ -50,7 +50,7 @@ pub async fn build_app(config: AppConfig, clients: Arc<Clients>) -> Result<App, 
     let app = App {
         db: pool,
         clients,
-        strategy_manager: StrategyManager,
+        strategy_manager: Arc::new(StrategyManager),
         config,
     };
 
