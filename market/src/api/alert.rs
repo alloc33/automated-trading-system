@@ -30,7 +30,8 @@ pub struct WebhookAlertData {
     pub ticker: String,
     pub timeframe: String,
     pub exchange: String,
-    pub signal_data: SignalData,
+    pub signal_type: SignalType,
+    pub trail_stop_price: Option<Decimal>,
     pub bar_data: BarData,
     pub time: DateTime<Utc>,
 }
@@ -83,12 +84,6 @@ impl<'de> Deserialize<'de> for SignalType {
             )),
         }
     }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct SignalData {
-    pub signal_type: SignalType,
-    pub trail_stop_price: Option<Decimal>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

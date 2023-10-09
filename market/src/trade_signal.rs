@@ -16,7 +16,8 @@ pub struct TradeSignal {
     pub ticker: String,
     pub timeframe: String,
     pub exchange: String,
-    pub signal_data: SignalData,
+    pub signal_type: SignalType,
+    pub trail_stop_price: Option<Decimal>,
     pub bar_data: BarData,
     pub time: DateTime<Utc>,
 }
